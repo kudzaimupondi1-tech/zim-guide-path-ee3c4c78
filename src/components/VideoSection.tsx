@@ -1,8 +1,16 @@
 import { Play, BookOpen, GraduationCap, Target } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const VideoSection = () => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handlePlay = () => {
+    setIsPlaying(true);
+    setTimeout(() => {
+      videoRef.current?.play();
+    }, 100);
+  };
 
   return (
     <section className="py-24 bg-background">
@@ -38,7 +46,7 @@ const VideoSection = () => {
 
                 {/* Play Button */}
                 <button
-                  onClick={() => setIsPlaying(true)}
+                  onClick={handlePlay}
                   className="relative z-10 group"
                 >
                   <div className="w-24 h-24 rounded-full bg-primary-foreground flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-2xl">
@@ -50,21 +58,21 @@ const VideoSection = () => {
                 {/* Text Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-primary/80 to-transparent">
                   <h3 className="text-primary-foreground text-xl font-bold text-center">
-                    Click to watch the demo
+                    Click to watch the tutorial
                   </h3>
                 </div>
               </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-muted">
-                {/* Tutorial video showing how to use EduGuide */}
-                <iframe
-                  className="w-full h-full"
-                  src="https://www.youtube.com/embed/VIDEO_ID_HERE?autoplay=1"
-                  title="How to Use EduGuide - Tutorial"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                controls
+                autoPlay
+                playsInline
+              >
+                <source src="/videos/eduguide-tutorial.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
             )}
           </div>
 
@@ -82,7 +90,7 @@ const VideoSection = () => {
                 <Target className="w-6 h-6 text-accent" />
               </div>
               <h4 className="font-semibold text-foreground mb-1">Get Matched</h4>
-              <p className="text-sm text-muted-foreground">Our AI matches you with suitable programs</p>
+              <p className="text-sm text-muted-foreground">Our system matches you with suitable programs</p>
             </div>
             <div className="text-center p-4">
               <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center mx-auto mb-3">
