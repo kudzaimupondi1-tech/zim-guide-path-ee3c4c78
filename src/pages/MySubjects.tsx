@@ -21,7 +21,7 @@ import type { Tables } from "@/integrations/supabase/types";
 type Subject = Tables<"subjects">;
 type StudentSubject = Tables<"student_subjects"> & { subjects?: Subject };
 
-const grades = ["A*", "A", "B", "C", "D", "E", "U"];
+const grades = ["A", "B", "C", "D", "E", "O", "F"];
 
 const MySubjects = () => {
   const navigate = useNavigate();

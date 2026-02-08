@@ -56,11 +56,11 @@ const VideoSection = () => {
               </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-muted">
-                {/* Placeholder for actual video - replace src with your video URL */}
+                {/* Tutorial video showing how to use EduGuide */}
                 <iframe
                   className="w-full h-full"
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
-                  title="EduGuide Demo Video"
+                  src="https://www.youtube.com/embed/VIDEO_ID_HERE?autoplay=1"
+                  title="How to Use EduGuide - Tutorial"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
