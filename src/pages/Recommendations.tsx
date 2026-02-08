@@ -48,11 +48,14 @@ type SubjectCombination = {
 };
 
 // Grade hierarchy for comparison (lower index = better grade)
-const GRADE_ORDER = ["A*", "A", "B", "C", "D", "E", "U"];
+// A > B > C > D > E > O > F
+const GRADE_ORDER = ["A", "B", "C", "D", "E", "O", "F"];
 
 const getGradeIndex = (grade: string | null): number => {
   if (!grade) return GRADE_ORDER.length;
-  const idx = GRADE_ORDER.indexOf(grade);
+  // Normalize grade (remove asterisk, uppercase)
+  const normalizedGrade = grade.replace("*", "").toUpperCase();
+  const idx = GRADE_ORDER.indexOf(normalizedGrade);
   return idx === -1 ? GRADE_ORDER.length : idx;
 };
 

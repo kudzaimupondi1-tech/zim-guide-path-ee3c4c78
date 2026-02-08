@@ -65,7 +65,7 @@ interface ProgramSubject {
   minimum_grade: string | null;
 }
 
-const GRADES = ["A*", "A", "B", "C", "D", "E"];
+const GRADES = ["A", "B", "C", "D", "E", "O", "F"];
 
 const programColumns: ExcelColumn[] = [
   { key: "name", header: "Program Name", required: true },
