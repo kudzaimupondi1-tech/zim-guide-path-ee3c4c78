@@ -1,5 +1,21 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -11,7 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, UserCircle } from "lucide-react";
+import { Loader2, UserCircle, Shield, Pencil, Trash2, Search, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
@@ -24,21 +40,32 @@ interface Profile {
 }
 
 interface UserRole {
+  id: string;
   user_id: string;
   role: string;
 }
+
+const ROLES = ["admin", "student", "counselor"];
 
 export default function AdminUsers() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [newRole, setNewRole] = useState("student");
+  const [editForm, setEditForm] = useState({ full_name: "", email: "", phone: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const fetchData = async () => {
     try {
       const [profilesRes, rolesRes] = await Promise.all([
         supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("user_roles").select("id, user_id, role"),
       ]);
 
       if (profilesRes.error) throw profilesRes.error;
@@ -63,9 +90,7 @@ export default function AdminUsers() {
   }, []);
 
   const getUserRoles = (userId: string) => {
-    return userRoles
-      .filter((r) => r.user_id === userId)
-      .map((r) => r.role);
+    return userRoles.filter((r) => r.user_id === userId);
   };
 
   const formatDate = (dateString: string) => {
@@ -76,14 +101,181 @@ export default function AdminUsers() {
     });
   };
 
+  const openEditDialog = (profile: Profile) => {
+    setEditingProfile(profile);
+    setEditForm({
+      full_name: profile.full_name || "",
+      email: profile.email || "",
+      phone: profile.phone || "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProfile) return;
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: editForm.full_name || null,
+          email: editForm.email || null,
+          phone: editForm.phone || null,
+        })
+        .eq("id", editingProfile.id);
+
+      if (error) throw error;
+      toast({ title: "Success", description: "Profile updated successfully" });
+      setIsEditDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({ title: "Error", description: "Failed to update profile", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openRoleDialog = (userId: string) => {
+    setSelectedUserId(userId);
+    setNewRole("student");
+    setIsRoleDialogOpen(true);
+  };
+
+  const handleAddRole = async () => {
+    if (!selectedUserId) return;
+    setIsSubmitting(true);
+
+    try {
+      // Check if role already exists
+      const existing = userRoles.find(
+        (r) => r.user_id === selectedUserId && r.role === newRole
+      );
+      if (existing) {
+        toast({ title: "Info", description: "User already has this role" });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const { error } = await supabase.from("user_roles").insert([{
+        user_id: selectedUserId,
+        role: newRole as "admin" | "student" | "counselor",
+      }]);
+
+      if (error) throw error;
+      toast({ title: "Success", description: `Role "${newRole}" assigned successfully` });
+      setIsRoleDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error("Error adding role:", error);
+      toast({ title: "Error", description: "Failed to assign role", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRemoveRole = async (roleId: string, roleName: string) => {
+    if (!confirm(`Remove "${roleName}" role from this user?`)) return;
+
+    try {
+      const { error } = await supabase.from("user_roles").delete().eq("id", roleId);
+      if (error) throw error;
+      toast({ title: "Success", description: `Role "${roleName}" removed` });
+      fetchData();
+    } catch (error) {
+      console.error("Error removing role:", error);
+      toast({ title: "Error", description: "Failed to remove role", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteProfile = async (profile: Profile) => {
+    if (!confirm(`Are you sure you want to delete the profile for "${profile.full_name || profile.email || "this user"}"?`)) return;
+
+    try {
+      // Remove all roles first
+      await supabase.from("user_roles").delete().eq("user_id", profile.user_id);
+      // Remove student subjects
+      await supabase.from("student_subjects").delete().eq("user_id", profile.user_id);
+      // Remove notifications
+      await supabase.from("student_notifications").delete().eq("user_id", profile.user_id);
+      // Remove profile
+      const { error } = await supabase.from("profiles").delete().eq("id", profile.id);
+      if (error) throw error;
+      toast({ title: "Success", description: "User profile deleted" });
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting profile:", error);
+      toast({ title: "Error", description: "Failed to delete profile", variant: "destructive" });
+    }
+  };
+
+  const filteredProfiles = profiles.filter((p) => {
+    const q = searchQuery.toLowerCase();
+    if (!q) return true;
+    return (
+      (p.full_name || "").toLowerCase().includes(q) ||
+      (p.email || "").toLowerCase().includes(q) ||
+      (p.phone || "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Users</h1>
-          <p className="text-muted-foreground mt-1">
-            View registered users and their roles
-          </p>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground">Users</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage registered users, roles, and permissions
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-64"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6 pb-4">
+              <div className="text-2xl font-bold text-foreground">{profiles.length}</div>
+              <p className="text-sm text-muted-foreground">Total Users</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 pb-4">
+              <div className="text-2xl font-bold text-foreground">
+                {userRoles.filter(r => r.role === "admin").length}
+              </div>
+              <p className="text-sm text-muted-foreground">Admins</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 pb-4">
+              <div className="text-2xl font-bold text-foreground">
+                {userRoles.filter(r => r.role === "student").length}
+              </div>
+              <p className="text-sm text-muted-foreground">Students</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 pb-4">
+              <div className="text-2xl font-bold text-foreground">
+                {userRoles.filter(r => r.role === "counselor").length}
+              </div>
+              <p className="text-sm text-muted-foreground">Counselors</p>
+            </CardContent>
+          </Card>
         </div>
 
         <Card>
@@ -92,9 +284,9 @@ export default function AdminUsers() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
-            ) : profiles.length === 0 ? (
+            ) : filteredProfiles.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No users found.
+                {searchQuery ? "No users match your search." : "No users found."}
               </div>
             ) : (
               <Table>
@@ -105,10 +297,11 @@ export default function AdminUsers() {
                     <TableHead>Phone</TableHead>
                     <TableHead>Roles</TableHead>
                     <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {profiles.map((profile) => {
+                  {filteredProfiles.map((profile) => {
                     const roles = getUserRoles(profile.user_id);
                     return (
                       <TableRow key={profile.id}>
@@ -125,23 +318,63 @@ export default function AdminUsers() {
                         <TableCell>{profile.email || "-"}</TableCell>
                         <TableCell>{profile.phone || "-"}</TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
+                          <div className="flex flex-wrap gap-1 items-center">
                             {roles.map((role) => (
                               <Badge
-                                key={role}
-                                variant={role === "admin" ? "default" : "secondary"}
-                                className={
-                                  role === "admin"
+                                key={role.id}
+                                variant={role.role === "admin" ? "default" : "secondary"}
+                                className={`cursor-pointer ${
+                                  role.role === "admin"
                                     ? "bg-primary text-primary-foreground"
                                     : ""
-                                }
+                                }`}
+                                onClick={() => handleRemoveRole(role.id, role.role)}
+                                title={`Click to remove ${role.role} role`}
                               >
-                                {role}
+                                {role.role} ×
                               </Badge>
                             ))}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="w-6 h-6"
+                              onClick={() => openRoleDialog(profile.user_id)}
+                              title="Add role"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
                           </div>
                         </TableCell>
                         <TableCell>{formatDate(profile.created_at)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openRoleDialog(profile.user_id)}
+                              title="Manage roles"
+                            >
+                              <Shield className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(profile)}
+                              title="Edit profile"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteProfile(profile)}
+                              className="text-destructive hover:text-destructive"
+                              title="Delete user"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -151,6 +384,101 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Profile</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateProfile} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input
+                id="full_name"
+                value={editForm.full_name}
+                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Role Dialog */}
+      <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Role</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Role</Label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedUserId && (
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Current roles:</Label>
+                <div className="flex flex-wrap gap-1">
+                  {getUserRoles(selectedUserId).map((r) => (
+                    <Badge key={r.id} variant="secondary">{r.role}</Badge>
+                  ))}
+                  {getUserRoles(selectedUserId).length === 0 && (
+                    <span className="text-sm text-muted-foreground">No roles assigned</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddRole} disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Assign Role
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
