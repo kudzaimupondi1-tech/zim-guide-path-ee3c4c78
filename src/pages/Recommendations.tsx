@@ -173,21 +173,21 @@ const Recommendations = () => {
     matched: number; 
     total: number; 
     details: string[];
-    qualifies: boolean;  // True only if student meets ALL requirements
+    qualifies: boolean;
+    matchedCount: number; // Number of subjects the student has that match program requirements
   } => {
     if (!program.program_subjects?.length || studentSubjects.length === 0) {
-      return { score: 0, matched: 0, total: 0, details: [], qualifies: false };
+      return { score: 0, matched: 0, total: 0, details: [], qualifies: false, matchedCount: 0 };
     }
     
     const requiredSubjects = program.program_subjects.filter(ps => ps.is_required);
     if (requiredSubjects.length === 0) {
-      // No specific requirements - student qualifies
-      return { score: 100, matched: 0, total: 0, details: ["No specific requirements"], qualifies: true };
+      return { score: 100, matched: 0, total: 0, details: ["No specific requirements"], qualifies: true, matchedCount: 0 };
     }
 
     let matched = 0;
     let hasSubjectButFailsGrade = 0;
-    let missingSubjects = 0;
+    let studentHasSubjectCount = 0;
     const details: string[] = [];
 
     for (const req of requiredSubjects) {
@@ -196,30 +196,34 @@ const Recommendations = () => {
       const studentSubject = studentSubjects.find((ss) => ss.subject_id === req.subjects?.id);
       
       if (!studentSubject) {
-        // Student doesn't have this subject at all - program excluded
-        missingSubjects++;
-        details.push(`✗ ${subjectName}: Not studied`);
-      } else if (meetsGradeRequirement(studentSubject.grade, minGrade)) {
-        // Student has subject AND meets grade requirement
-        matched++;
-        details.push(`✓ ${subjectName}: ${studentSubject.grade || "N/A"} (need ${minGrade || "any"})`);
+        // Student doesn't have this subject - skip (don't disqualify)
+        details.push(`— ${subjectName}: Not studied`);
       } else {
-        // Student has subject but grade doesn't meet minimum
-        hasSubjectButFailsGrade++;
-        details.push(`✗ ${subjectName}: ${studentSubject.grade || "N/A"} < ${minGrade} required`);
+        studentHasSubjectCount++;
+        if (meetsGradeRequirement(studentSubject.grade, minGrade)) {
+          matched++;
+          details.push(`✓ ${subjectName}: ${studentSubject.grade || "N/A"} (need ${minGrade || "any"})`);
+        } else {
+          hasSubjectButFailsGrade++;
+          details.push(`✗ ${subjectName}: ${studentSubject.grade || "N/A"} < ${minGrade} required`);
+        }
       }
     }
 
     // QUALIFICATION RULE:
-    // Student qualifies ONLY if:
-    // 1. They have ALL required subjects (no missing subjects)
-    // 2. ALL their grades meet or exceed the minimum requirements
-    const qualifies = missingSubjects === 0 && hasSubjectButFailsGrade === 0;
+    // Student qualifies if:
+    // 1. They have at least 1 subject that matches the program's requirements
+    // 2. For ALL subjects the student has entered that are also in the program requirements,
+    //    the student's grade meets or exceeds the minimum
+    // 3. No grade failures on any matching subjects
+    const qualifies = studentHasSubjectCount >= 1 && hasSubjectButFailsGrade === 0;
     
-    // Score calculation (for sorting purposes)
-    const score = qualifies ? 100 : Math.round((matched / requiredSubjects.length) * 100);
+    // Score: percentage of required subjects the student has and meets
+    const score = requiredSubjects.length > 0 
+      ? Math.round((matched / requiredSubjects.length) * 100) 
+      : 0;
     
-    return { score, matched, total: requiredSubjects.length, details, qualifies };
+    return { score, matched, total: requiredSubjects.length, details, qualifies, matchedCount: studentHasSubjectCount };
   };
 
   // Get O-Level subjects sorted by grade (best first)
