@@ -23,7 +23,7 @@ const INITIAL_MESSAGE: Message = {
 };
 
 // Only show chatbot on student pages (not landing, auth, or admin)
-const STUDENT_ROUTES = ["/dashboard", "/my-subjects", "/recommendations", "/universities", "/careers", "/career-guidance", "/profile"];
+const STUDENT_ROUTES = ["/dashboard", "/my-subjects", "/view-subjects", "/recommendations", "/universities", "/careers", "/career-guidance", "/profile"];
 
 export const StudentChatbot = () => {
   const location = useLocation();
