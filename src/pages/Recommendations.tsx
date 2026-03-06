@@ -887,7 +887,7 @@ const Recommendations = () => {
               ))}
             </div>
 
-            {filteredPrograms.filter((p) => activeTab === "all" || p.matchData.score > 0).length === 0 && (
+            {displayPrograms.filter((p) => activeTab === "all" || p.matchData.score > 0).length === 0 && (
               <Card className="py-12">
                 <CardContent className="text-center">
                   <Target className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
