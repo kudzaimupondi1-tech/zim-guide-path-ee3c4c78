@@ -85,6 +85,8 @@ const Recommendations = () => {
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [activeTab, setActiveTab] = useState<string>("recommendations");
   const [selectedProgramDetail, setSelectedProgramDetail] = useState<(Program & { matchData: ReturnType<typeof calculateMatchScore> }) | null>(null);
+  const [searchParams] = useSearchParams();
+  const universityCountFilter = parseInt(searchParams.get("universities") || "0");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
