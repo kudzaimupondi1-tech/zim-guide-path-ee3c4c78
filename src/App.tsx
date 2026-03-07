@@ -28,6 +28,9 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminCombinations from "./pages/admin/AdminCombinations";
 import AdminGrading from "./pages/admin/AdminGrading";
+import AdminPayments from "./pages/admin/AdminPayments";
+import AdminReports from "./pages/admin/AdminReports";
+import AdminLogs from "./pages/admin/AdminLogs";
 import { StudentChatbot } from "./components/StudentChatbot";
 
 const queryClient = new QueryClient();
@@ -64,6 +67,9 @@ const App = () => (
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/combinations" element={<AdminCombinations />} />
           <Route path="/admin/grading" element={<AdminGrading />} />
+          <Route path="/admin/payments" element={<AdminPayments />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/logs" element={<AdminLogs />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
