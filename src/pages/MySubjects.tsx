@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { 
+import {
   GraduationCap, Plus, BookOpen, ArrowLeft, Loader2, AlertCircle, CheckCircle2,
   ChevronRight, Phone, CreditCard, Building2
 } from "lucide-react";
@@ -38,7 +38,7 @@ const MySubjects = () => {
   const [studentLevel, setStudentLevel] = useState<"O-Level" | "A-Level" | null>(null);
   const [availableSubjects, setAvailableSubjects] = useState<Subject[]>([]);
   const [step, setStep] = useState<WizardStep>("level");
-  
+
   const [oLevelSubjectId, setOLevelSubjectId] = useState("");
   const [oLevelGrade, setOLevelGrade] = useState("");
   const [aLevelSubjectId, setALevelSubjectId] = useState("");
@@ -51,6 +51,10 @@ const MySubjects = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // New states for A-Level university selection
+  const [universities, setUniversities] = useState<{ id: string, name: string }[]>([]);
+  const [selectedUniversities, setSelectedUniversities] = useState<string[]>([]);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session?.user) navigate("/auth");
@@ -60,8 +64,18 @@ const MySubjects = () => {
       if (!session?.user) navigate("/auth");
       else { setUser(session.user); fetchData(session.user.id); }
     });
+    fetchUniversities();
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const fetchUniversities = async () => {
+    try {
+      const { data, error } = await supabase.from("universities").select("id, name").eq("is_active", true).order("name");
+      if (!error && data) setUniversities(data);
+    } catch (err) {
+      console.error("Failed to fetch universities", err);
+    }
+  };
 
   const fetchData = async (userId: string) => {
     try {
@@ -89,7 +103,7 @@ const MySubjects = () => {
   const handleAddSubject = async (level: "O-Level" | "A-Level") => {
     const subjectId = level === "O-Level" ? oLevelSubjectId : aLevelSubjectId;
     const grade = level === "O-Level" ? oLevelGrade : aLevelGrade;
-    
+
     if (!subjectId || !grade || !user) {
       toast.error("Please select both a subject and a grade");
       return;
@@ -108,7 +122,7 @@ const MySubjects = () => {
         .select("*, subjects(*)")
         .single();
       if (error) throw error;
-      
+
       setSessionSubjects(prev => [...prev, data]);
       if (level === "O-Level") { setOLevelSubjectId(""); setOLevelGrade(""); }
       else { setALevelSubjectId(""); setALevelGrade(""); }
@@ -161,6 +175,13 @@ const MySubjects = () => {
     const pricing = A_LEVEL_PRICING.find(p => p.label === selectedPricing);
     if (!pricing) { toast.error("Please select an option"); return; }
 
+    const limit = pricing.count;
+    // Enforce selection exactly matches limit, unless "All" (limit = 0)
+    if (limit > 0 && selectedUniversities.length !== limit) {
+      toast.error(`Please select exactly ${limit} universit${limit === 1 ? 'y' : 'ies'}.`);
+      return;
+    }
+
     if (!isAdmin && !phoneNumber.trim()) {
       toast.error("Please enter your EcoCash phone number");
       return;
@@ -182,13 +203,15 @@ const MySubjects = () => {
 
       if (result.admin_bypass || result.status === "completed" || result.status === "COMPLETED") {
         toast.success("Payment successful! Generating recommendations...");
-        navigate(`/recommendations?universities=${pricing.count}&level=a-level`);
+        const uniParam = pricing.count === 0 ? "all" : selectedUniversities.join(",");
+        navigate(`/recommendations?universities=${pricing.count}&level=a-level&uni_ids=${uniParam}`);
         return;
       }
 
       if (result.payment_id) {
         toast.info("Please approve the payment on your phone");
-        pollPaymentStatus(result.payment_id, pricing.count, "a-level");
+        const uniParam = pricing.count === 0 ? "all" : selectedUniversities.join(",");
+        pollPaymentStatus(result.payment_id, pricing.count, "a-level", uniParam);
       }
     } catch (error: any) {
       toast.error(error.message || "Payment failed");
@@ -197,21 +220,44 @@ const MySubjects = () => {
     }
   };
 
-  const pollPaymentStatus = async (paymentId: string, universityCount: number, level: string) => {
+  const pollPaymentStatus = async (paymentId: string, universityCount: number, level: string, uniParam: string = "") => {
     let attempts = 0;
-    const maxAttempts = 60;
+    const maxAttempts = 60; // 2 minutes
     const interval = setInterval(async () => {
       attempts++;
-      const { data } = await supabase.from("payments").select("status").eq("id", paymentId).single();
-      if (data?.status === "completed") {
-        clearInterval(interval);
-        toast.success("Payment confirmed! Generating recommendations...");
-        navigate(`/recommendations?universities=${universityCount}&level=${level}`);
-      } else if (data?.status === "failed" || attempts >= maxAttempts) {
-        clearInterval(interval);
-        setPaymentLoading(false);
-        setStep(level === "o-level" ? "confirm" : "university");
-        toast.error(data?.status === "failed" ? "Payment was declined" : "Payment timed out.");
+      try {
+        const { data, error } = await supabase.from("payments").select("status").eq("id", paymentId).single();
+        if (error) throw error;
+
+        if (data?.status === "completed") {
+          clearInterval(interval);
+          toast.success("Payment confirmed! Generating recommendations...");
+
+          try {
+            let path = `/recommendations?level=${level}`;
+            if (level === "a-level") path += `&universities=${universityCount}&uni_ids=${uniParam}`;
+
+            navigate(path);
+          } catch (navError) {
+            console.error("Navigation failed after payment:", navError);
+            toast.error("Payment successful but redirect failed. Please contact Admin with this error for a manual redirect or refund.", { duration: 10000 });
+            setPaymentLoading(false);
+            setStep(level === "o-level" ? "confirm" : "university");
+          }
+        } else if (data?.status === "failed" || attempts >= maxAttempts) {
+          clearInterval(interval);
+          setPaymentLoading(false);
+          setStep(level === "o-level" ? "confirm" : "university");
+          toast.error(data?.status === "failed" ? "Payment was declined" : "Payment timed out. If money was deducted, please show this to Admin for a refund.", { duration: 8000 });
+        }
+      } catch (err) {
+        console.error("Error polling payment status:", err);
+        // Continue polling unless we hit max attempts
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setPaymentLoading(false);
+          toast.error("Lost connection to payment server. Check your recommendations page or ask Admin for a refund.", { duration: 8000 });
+        }
       }
     }, 2000);
   };
@@ -384,8 +430,8 @@ const MySubjects = () => {
             <Button variant="outline" size="sm" onClick={() => setStep("level")}>
               <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
             </Button>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={() => setStep("confirm")}
               disabled={sessionSubjects.length === 0}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold px-6"
@@ -558,11 +604,16 @@ const MySubjects = () => {
                   <CardDescription className="text-xs">Select the number of universities for recommendations</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <RadioGroup value={selectedPricing} onValueChange={setSelectedPricing} className="space-y-3">
+                  <RadioGroup value={selectedPricing} onValueChange={(val) => {
+                    setSelectedPricing(val);
+                    setSelectedUniversities([]); // Reset selections when pricing changes
+                  }} className="space-y-3">
                     {A_LEVEL_PRICING.map((option) => (
-                      <div key={option.label} className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        selectedPricing === option.label ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
-                      }`} onClick={() => setSelectedPricing(option.label)}>
+                      <div key={option.label} className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedPricing === option.label ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                        }`} onClick={() => {
+                          setSelectedPricing(option.label);
+                          setSelectedUniversities([]);
+                        }}>
                         <div className="flex items-center gap-3">
                           <RadioGroupItem value={option.label} id={option.label} />
                           <Label htmlFor={option.label} className="text-sm font-medium cursor-pointer">{option.label}</Label>
@@ -575,6 +626,50 @@ const MySubjects = () => {
                   </RadioGroup>
                 </CardContent>
               </Card>
+
+              {selectedPricing && (
+                <Card className="border border-border shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-primary" /> Select Universities
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {A_LEVEL_PRICING.find(p => p.label === selectedPricing)?.count === 0
+                        ? "All universities will be included in your recommendations."
+                        : `Please select exactly ${A_LEVEL_PRICING.find(p => p.label === selectedPricing)?.count} from the list below.`}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {A_LEVEL_PRICING.find(p => p.label === selectedPricing)?.count === 0 ? (
+                      <div className="text-sm text-muted-foreground p-4 bg-muted/30 rounded-lg text-center border border-border">
+                        All universities automatically selected! You will receive recommendations across all available institutions.
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        {universities.map(uni => {
+                          const limit = A_LEVEL_PRICING.find(p => p.label === selectedPricing)?.count || 0;
+                          const isSelected = selectedUniversities.includes(uni.id);
+                          const isDisabled = !isSelected && selectedUniversities.length >= limit;
+
+                          return (
+                            <div key={uni.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-border'} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary/50'}`} onClick={() => {
+                              if (isDisabled) return;
+                              setSelectedUniversities(prev =>
+                                isSelected ? prev.filter(id => id !== uni.id) : [...prev, uni.id]
+                              );
+                            }}>
+                              <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-input bg-background'}`}>
+                                {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                              </div>
+                              <span className="text-sm font-medium">{uni.name}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {!isAdmin && selectedPricing && (
                 <Card className="border border-border shadow-sm">

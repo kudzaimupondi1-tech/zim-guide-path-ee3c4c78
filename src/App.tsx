@@ -14,6 +14,7 @@ import UniversitiesPage from "./pages/UniversitiesPage";
 import UniversityDetailPage from "./pages/UniversityDetailPage";
 import CareersPage from "./pages/CareersPage";
 import CareerGuidancePage from "./pages/CareerGuidancePage";
+import FavoredPrograms from "./pages/FavoredPrograms";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUniversities from "./pages/admin/AdminUniversities";
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/universities/:id" element={<UniversityDetailPage />} />
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/career-guidance" element={<CareerGuidancePage />} />
+          <Route path="/favored-programs" element={<FavoredPrograms />} />
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/universities" element={<AdminUniversities />} />

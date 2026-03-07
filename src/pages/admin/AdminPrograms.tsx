@@ -30,7 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Loader2, BookOpen, Upload, Download, FileSpreadsheet, FileText, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, BookOpen, Upload, Download, FileSpreadsheet, FileText, Search, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useExcelImportExport, ExcelColumn } from "@/hooks/useExcelImportExport";
@@ -354,7 +354,7 @@ export default function AdminPrograms() {
     setEditingReqIndex(reqIndex);
     setEditingGroupIndex(groupIndex);
     const req = formData.structured_requirements[reqIndex] as any;
-    
+
     if (groupIndex === null) {
       // Editing compulsory subjects
       setEditingCompulsory(true);
@@ -378,7 +378,7 @@ export default function AdminPrograms() {
   const addNewSubjectAndSelect = async () => {
     const name = newSubjectName.trim();
     if (!name) return;
-    
+
     // Check if subject already exists
     if (subjects.some((s) => s.name.toLowerCase() === name.toLowerCase())) {
       toast({ title: "Subject Exists", description: `"${name}" is already in the list.`, variant: "destructive" });
@@ -406,7 +406,7 @@ export default function AdminPrograms() {
   const saveReqSubjects = () => {
     if (editingReqIndex === null) return;
     const updated = [...formData.structured_requirements];
-    
+
     if (editingCompulsory) {
       // Save compulsory subjects
       (updated[editingReqIndex] as any).compulsory_subjects = tempSelectedSubjects;
@@ -419,7 +419,7 @@ export default function AdminPrograms() {
       };
       (updated[editingReqIndex] as any).subject_groups = groups;
     }
-    
+
     setFormData({ ...formData, structured_requirements: updated });
     setIsReqSubjectsDialogOpen(false);
     setEditingReqIndex(null);
@@ -436,12 +436,12 @@ export default function AdminPrograms() {
     return formData.structured_requirements.map((r) => {
       let text = `${r.min_passes} ${r.qualification_type} passes`;
       if (r.min_grade) text += ` (min grade: ${r.min_grade})`;
-      
+
       const compulsory = (r as any).compulsory_subjects || [];
       if (compulsory.length > 0) {
         text += ` + must have: ${compulsory.join(", ")}`;
       }
-      
+
       const groups = (r as any).subject_groups || [];
       if (groups.length > 0) {
         const groupTexts = groups.map((g: any) => {
@@ -705,195 +705,195 @@ export default function AdminPrograms() {
               </Button>
             </div>
             <input ref={imageInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleImageExtract} className="hidden" />
-                <Dialog open={isExtractDialogOpen} onOpenChange={setIsExtractDialogOpen}>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Review Extracted Programs</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">Review the extracted programmes below. Edit fields or uncheck items you don't want to import. Confirm when ready.</p>
-                      <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-                        {extractedPrograms.map((ep, i) => (
-                          <div key={i} className="p-3 border rounded-lg bg-muted/10">
-                            <div className="flex items-start gap-3">
-                              <input type="checkbox" checked={!!ep._selected} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i]._selected = e.target.checked; return copy; })} />
-                              <div className="flex-1">
-                                <div className="grid md:grid-cols-2 gap-2">
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Program Name</Label>
-                                    <Input value={ep.name || ""} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].name = e.target.value; return copy; })} />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">University (hint)</Label>
-                                    <Select value={ep._selected_university || ep._extracted_university || ""} onValueChange={(v) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i]._selected_university = v; return copy; })}>
-                                      <SelectTrigger><SelectValue placeholder={ep._extracted_university || "Select university"} /></SelectTrigger>
-                                      <SelectContent>
-                                        {universities.map((u) => (<SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                                <div className="grid md:grid-cols-3 gap-2 mt-2">
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Faculty</Label>
-                                    <Input value={ep.faculty || ""} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].faculty = e.target.value; return copy; })} />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Degree Type</Label>
-                                    <Select value={ep.degree_type || ""} onValueChange={(v) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].degree_type = v; return copy; })}>
-                                      <SelectTrigger><SelectValue /></SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="Bachelor">Bachelor</SelectItem>
-                                        <SelectItem value="Honours">Honours</SelectItem>
-                                        <SelectItem value="Diploma">Diploma</SelectItem>
-                                        <SelectItem value="Certificate">Certificate</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label className="text-xs">Duration (yrs)</Label>
-                                    <Input type="number" value={ep.duration_years || 4} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].duration_years = parseInt(e.target.value) || 4; return copy; })} />
-                                  </div>
-                                </div>
-                                <div className="mt-2">
-                                  <Label className="text-xs">Entry Requirements (text)</Label>
-                                  <Textarea value={ep.entry_requirements || ""} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].entry_requirements = e.target.value; return copy; })} rows={2} />
-                                </div>
-                                <div className="mt-2">
-                                  <Label className="text-xs">Structured Requirements (JSON)</Label>
-                                  <Textarea value={JSON.stringify(ep.structured_requirements || [], null, 2)} onChange={(e) => {
-                                    try {
-                                      const parsed = JSON.parse(e.target.value);
-                                      setExtractedPrograms(prev => { const copy = [...prev]; copy[i].structured_requirements = parsed; return copy; });
-                                    } catch { /* ignore parse errors while typing */ }
-                                  }} rows={3} />
-                                </div>
-                                {ep._confidence && (
-                                  <div className="text-xs text-muted-foreground mt-2">Confidence: {Math.round(ep._confidence * 100)}%</div>
-                                )}
+            <Dialog open={isExtractDialogOpen} onOpenChange={setIsExtractDialogOpen}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Review Extracted Programs</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Review the extracted programmes below. Edit fields or uncheck items you don't want to import. Confirm when ready.</p>
+                  <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                    {extractedPrograms.map((ep, i) => (
+                      <div key={i} className="p-3 border rounded-lg bg-muted/10">
+                        <div className="flex items-start gap-3">
+                          <input type="checkbox" checked={!!ep._selected} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i]._selected = e.target.checked; return copy; })} />
+                          <div className="flex-1">
+                            <div className="grid md:grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Program Name</Label>
+                                <Input value={ep.name || ""} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].name = e.target.value; return copy; })} />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">University (hint)</Label>
+                                <Select value={ep._selected_university || ep._extracted_university || ""} onValueChange={(v) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i]._selected_university = v; return copy; })}>
+                                  <SelectTrigger><SelectValue placeholder={ep._extracted_university || "Select university"} /></SelectTrigger>
+                                  <SelectContent>
+                                    {universities.map((u) => (<SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>))}
+                                  </SelectContent>
+                                </Select>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => { setIsExtractDialogOpen(false); setExtractedPrograms([]); }}>Cancel</Button>
-                        <Button onClick={saveExtractedPrograms} disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Selected"}</Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Dialog open={isReqAutoDialogOpen} onOpenChange={setIsReqAutoDialogOpen}>
-                  <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Review Auto-filled Conditions</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">Review the extracted conditions below. You can replace the current conditions or merge them.</p>
-                      <div className="space-y-3">
-                        {extractedReqs.map((r, i) => (
-                          <div key={i} className="p-3 border rounded-lg bg-muted/10">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Condition {i + 1}: {r.qualification_type || 'Unknown'}</div>
-                            </div>
-                            <div className="mt-2 text-sm">
-                              <div><strong>Min passes:</strong> {r.min_passes ?? '-'}</div>
-                              <div><strong>Min grade:</strong> {r.min_grade ?? '-'}</div>
-                              <div className="mt-1"><strong>Compulsory subjects:</strong> {(r.compulsory_subjects || []).join(', ') || '-'}</div>
-                              <div className="mt-1"><strong>Subject groups:</strong>
-                                <ul className="list-disc pl-5">
-                                  {(r.subject_groups || []).map((g: any, gi: number) => (
-                                    <li key={gi}>At least {g.min_required} of: { (g.subjects || []).join(', ') }</li>
-                                  ))}
-                                </ul>
+                            <div className="grid md:grid-cols-3 gap-2 mt-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Faculty</Label>
+                                <Input value={ep.faculty || ""} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].faculty = e.target.value; return copy; })} />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Degree Type</Label>
+                                <Select value={ep.degree_type || ""} onValueChange={(v) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].degree_type = v; return copy; })}>
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Bachelor">Bachelor</SelectItem>
+                                    <SelectItem value="Honours">Honours</SelectItem>
+                                    <SelectItem value="Diploma">Diploma</SelectItem>
+                                    <SelectItem value="Certificate">Certificate</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Duration (yrs)</Label>
+                                <Input type="number" value={ep.duration_years || 4} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].duration_years = parseInt(e.target.value) || 4; return copy; })} />
                               </div>
                             </div>
+                            <div className="mt-2">
+                              <Label className="text-xs">Entry Requirements (text)</Label>
+                              <Textarea value={ep.entry_requirements || ""} onChange={(e) => setExtractedPrograms(prev => { const copy = [...prev]; copy[i].entry_requirements = e.target.value; return copy; })} rows={2} />
+                            </div>
+                            <div className="mt-2">
+                              <Label className="text-xs">Structured Requirements (JSON)</Label>
+                              <Textarea value={JSON.stringify(ep.structured_requirements || [], null, 2)} onChange={(e) => {
+                                try {
+                                  const parsed = JSON.parse(e.target.value);
+                                  setExtractedPrograms(prev => { const copy = [...prev]; copy[i].structured_requirements = parsed; return copy; });
+                                } catch { /* ignore parse errors while typing */ }
+                              }} rows={3} />
+                            </div>
+                            {ep._confidence && (
+                              <div className="text-xs text-muted-foreground mt-2">Confidence: {Math.round(ep._confidence * 100)}%</div>
+                            )}
                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => { setIsExtractDialogOpen(false); setExtractedPrograms([]); }}>Cancel</Button>
+                    <Button onClick={saveExtractedPrograms} disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Selected"}</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={isReqAutoDialogOpen} onOpenChange={setIsReqAutoDialogOpen}>
+              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Review Auto-filled Conditions</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Review the extracted conditions below. You can replace the current conditions or merge them.</p>
+                  <div className="space-y-3">
+                    {extractedReqs.map((r, i) => (
+                      <div key={i} className="p-3 border rounded-lg bg-muted/10">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium">Condition {i + 1}: {r.qualification_type || 'Unknown'}</div>
+                        </div>
+                        <div className="mt-2 text-sm">
+                          <div><strong>Min passes:</strong> {r.min_passes ?? '-'}</div>
+                          <div><strong>Min grade:</strong> {r.min_grade ?? '-'}</div>
+                          <div className="mt-1"><strong>Compulsory subjects:</strong> {(r.compulsory_subjects || []).join(', ') || '-'}</div>
+                          <div className="mt-1"><strong>Subject groups:</strong>
+                            <ul className="list-disc pl-5">
+                              {(r.subject_groups || []).map((g: any, gi: number) => (
+                                <li key={gi}>At least {g.min_required} of: {(g.subjects || []).join(', ')}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => { setIsReqAutoDialogOpen(false); setExtractedReqs([]); }}>Cancel</Button>
+                    <Button onClick={() => {
+                      // Replace existing conditions
+                      setFormData({ ...formData, structured_requirements: extractedReqs });
+                      setIsReqAutoDialogOpen(false);
+                      setExtractedReqs([]);
+                      toast({ title: 'Applied', description: 'Replaced conditions with extracted results' });
+                    }}>Replace Conditions</Button>
+                    <Button onClick={() => {
+                      // Merge: append extracted to existing
+                      setFormData({ ...formData, structured_requirements: [...formData.structured_requirements, ...extractedReqs] });
+                      setIsReqAutoDialogOpen(false);
+                      setExtractedReqs([]);
+                      toast({ title: 'Merged', description: 'Merged extracted conditions into existing' });
+                    }}>Merge Conditions</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            {/* Required Subjects Picker Dialog */}
+            <Dialog open={isReqSubjectsDialogOpen} onOpenChange={setIsReqSubjectsDialogOpen}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingCompulsory ? "Edit Compulsory Subjects" : "Edit Subject Group"}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {!editingCompulsory && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">How many subjects from this group are required?</Label>
+                      <Input type="number" min={1} max={20} value={minRequiredFromGroup} onChange={(e) => setMinRequiredFromGroup(parseInt(e.target.value) || 1)} />
+                    </div>
+                  )}
+                  <p className="text-sm text-muted-foreground">{editingCompulsory ? "Select subjects that must ALL be present" : "Select subjects for this group or add a new one."}</p>
+                  {tempSelectedSubjects.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold">Selected Subjects ({tempSelectedSubjects.length}):</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {tempSelectedSubjects.map((sub) => (
+                          <Badge key={sub} variant={editingCompulsory ? "default" : "outline"} className="flex items-center gap-1 pr-1">
+                            {sub}
+                            <button
+                              type="button"
+                              onClick={() => toggleTempSubject(sub)}
+                              className="ml-1 text-xs hover:text-destructive"
+                              aria-label={`Remove ${sub}`}
+                            >
+                              ×
+                            </button>
+                          </Badge>
                         ))}
                       </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => { setIsReqAutoDialogOpen(false); setExtractedReqs([]); }}>Cancel</Button>
-                        <Button onClick={() => {
-                          // Replace existing conditions
-                          setFormData({ ...formData, structured_requirements: extractedReqs });
-                          setIsReqAutoDialogOpen(false);
-                          setExtractedReqs([]);
-                          toast({ title: 'Applied', description: 'Replaced conditions with extracted results' });
-                        }}>Replace Conditions</Button>
-                        <Button onClick={() => {
-                          // Merge: append extracted to existing
-                          setFormData({ ...formData, structured_requirements: [...formData.structured_requirements, ...extractedReqs] });
-                          setIsReqAutoDialogOpen(false);
-                          setExtractedReqs([]);
-                          toast({ title: 'Merged', description: 'Merged extracted conditions into existing' });
-                        }}>Merge Conditions</Button>
-                      </div>
                     </div>
-                  </DialogContent>
-                </Dialog>
-                {/* Required Subjects Picker Dialog */}
-                <Dialog open={isReqSubjectsDialogOpen} onOpenChange={setIsReqSubjectsDialogOpen}>
-                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{editingCompulsory ? "Edit Compulsory Subjects" : "Edit Subject Group"}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      {!editingCompulsory && (
-                        <div className="space-y-2">
-                          <Label className="text-sm font-semibold">How many subjects from this group are required?</Label>
-                          <Input type="number" min={1} max={20} value={minRequiredFromGroup} onChange={(e) => setMinRequiredFromGroup(parseInt(e.target.value) || 1)} />
+                  )}
+                  <div className="grid gap-2 max-h-[40vh] overflow-y-auto border rounded p-2">
+                    {Array.from(new Set(subjects.map(s => s.name))).map((subjectName) => {
+                      const subjectData = subjects.find(s => s.name === subjectName);
+                      const category = subjectData?.category || subjectData?.level || "";
+                      return (
+                        <div key={subjectName} className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted/50 ${tempSelectedSubjects.includes(subjectName) ? 'bg-primary/5' : ''}`}>
+                          <Checkbox checked={tempSelectedSubjects.includes(subjectName)} onCheckedChange={() => toggleTempSubject(subjectName)} />
+                          <div className="flex-1">{subjectName} {category && <span className="text-xs text-muted-foreground">({category})</span>}</div>
                         </div>
-                      )}
-                      <p className="text-sm text-muted-foreground">{editingCompulsory ? "Select subjects that must ALL be present" : "Select subjects for this group or add a new one."}</p>
-                      {tempSelectedSubjects.length > 0 && (
-                        <div className="space-y-2">
-                          <Label className="text-xs font-semibold">Selected Subjects ({tempSelectedSubjects.length}):</Label>
-                          <div className="flex flex-wrap gap-2">
-                            {tempSelectedSubjects.map((sub) => (
-                              <Badge key={sub} variant={editingCompulsory ? "default" : "outline"} className="flex items-center gap-1 pr-1">
-                                {sub}
-                                <button
-                                  type="button"
-                                  onClick={() => toggleTempSubject(sub)}
-                                  className="ml-1 text-xs hover:text-destructive"
-                                  aria-label={`Remove ${sub}`}
-                                >
-                                  ×
-                                </button>
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <div className="grid gap-2 max-h-[40vh] overflow-y-auto border rounded p-2">
-                        {Array.from(new Set(subjects.map(s => s.name))).map((subjectName) => {
-                          const subjectData = subjects.find(s => s.name === subjectName);
-                          const category = subjectData?.category || subjectData?.level || "";
-                          return (
-                          <div key={subjectName} className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted/50 ${tempSelectedSubjects.includes(subjectName) ? 'bg-primary/5' : ''}`}>
-                            <Checkbox checked={tempSelectedSubjects.includes(subjectName)} onCheckedChange={() => toggleTempSubject(subjectName)} />
-                            <div className="flex-1">{subjectName} {category && <span className="text-xs text-muted-foreground">({category})</span>}</div>
-                          </div>
-                          );
-                        })}
-                      </div>
-                      <div className="grid gap-2 md:grid-cols-3">
-                        <Input placeholder="Add new subject (e.g. Further Mathematics)" value={newSubjectName} onChange={(e) => setNewSubjectName(e.target.value)} />
-                        <Button onClick={addNewSubjectAndSelect} disabled={isSubmitting || !newSubjectName.trim()}>Add & Select</Button>
-                        <div />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsReqSubjectsDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={saveReqSubjects}>Save {editingCompulsory ? "Compulsory Subjects" : "Group"}</Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                      );
+                    })}
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-3">
+                    <Input placeholder="Add new subject (e.g. Further Mathematics)" value={newSubjectName} onChange={(e) => setNewSubjectName(e.target.value)} />
+                    <Button onClick={addNewSubjectAndSelect} disabled={isSubmitting || !newSubjectName.trim()}>Add & Select</Button>
+                    <div />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsReqSubjectsDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={saveReqSubjects}>Save {editingCompulsory ? "Compulsory Subjects" : "Group"}</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
-                <Button className="gap-2"><Plus className="w-4 h-4" /> Add Program</Button>
+                <Button className="w-full sm:w-auto"><Plus className="w-4 h-4 mr-2" /> Add Program</Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
                   <DialogTitle>{editingProgram ? "Edit Program" : "Add Program"}</DialogTitle>
                 </DialogHeader>
@@ -944,15 +944,15 @@ export default function AdminPrograms() {
                           if (!formData.entry_requirements?.trim()) { toast({ title: "Empty requirements", description: "Please enter entry requirements text first", variant: 'destructive' }); return; }
                           setIsAutoFilling(true);
                           try {
-                              const { data, error } = await supabase.functions.invoke("extract-image-info", { body: { text: formData.entry_requirements, extractionType: "requirements" } });
-                              if (error) throw error;
-                              const structured = data?.structured_requirements || data?.extractedInfo?.structured_requirements || [];
-                              if (!structured || structured.length === 0) {
-                                toast({ title: "No conditions found", description: "Could not extract structured conditions from the text.", variant: 'destructive' });
-                              } else {
-                                setExtractedReqs(structured);
-                                setIsReqAutoDialogOpen(true);
-                              }
+                            const { data, error } = await supabase.functions.invoke("extract-image-info", { body: { text: formData.entry_requirements, extractionType: "requirements" } });
+                            if (error) throw error;
+                            const structured = data?.structured_requirements || data?.extractedInfo?.structured_requirements || [];
+                            if (!structured || structured.length === 0) {
+                              toast({ title: "No conditions found", description: "Could not extract structured conditions from the text.", variant: 'destructive' });
+                            } else {
+                              setExtractedReqs(structured);
+                              setIsReqAutoDialogOpen(true);
+                            }
                           } catch (err) {
                             console.error("Auto-fill error:", err);
                             toast({ title: "Error", description: "Failed to auto-fill conditions", variant: 'destructive' });
@@ -1131,7 +1131,7 @@ export default function AdminPrograms() {
 
         {/* Subjects Dialog */}
         <Dialog open={isSubjectsDialogOpen} onOpenChange={setIsSubjectsDialogOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}>
             <DialogHeader>
               <DialogTitle>Subject Requirements for {selectedProgram?.name}</DialogTitle>
             </DialogHeader>
@@ -1205,37 +1205,45 @@ export default function AdminPrograms() {
                 </TableHeader>
                 <TableBody>
                   {filteredPrograms.map((program) => {
-                    const hasConditions = ((program as any).structured_requirements || []).length > 0 || program.entry_requirements;
+                    const hasConditions = ((program as any).structured_requirements || []).length > 0 || !!program.entry_requirements;
                     return (
-                    <TableRow key={program.id} className={!hasConditions ? "opacity-40" : ""}>
-                      <TableCell className="font-medium max-w-[200px]">{program.name}</TableCell>
-                      <TableCell>{program.universities?.name || "-"}</TableCell>
-                      <TableCell>{program.faculty || "-"}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize text-xs">
-                          {(program as any).entry_type || "normal"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="max-w-[300px]">
-                        <p className="text-sm text-muted-foreground line-clamp-2">{program.entry_requirements || "-"}</p>
-                      </TableCell>
-                      <TableCell>{program.degree_type && <Badge variant="outline">{program.degree_type}</Badge>}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${program.is_active ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}>
-                          {program.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openEditDialog(program)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(program.id)} className="text-destructive hover:text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                      <TableRow
+                        key={program.id}
+                        className={!hasConditions ? "bg-red-50 hover:bg-red-100/80 dark:bg-red-950/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400" : ""}
+                        title={!hasConditions ? "Missing entry requirements" : ""}
+                      >
+                        <TableCell className="font-medium max-w-[200px]">{program.name}</TableCell>
+                        <TableCell>{program.universities?.name || "-"}</TableCell>
+                        <TableCell>{program.faculty || "-"}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize text-xs">
+                            {(program as any).entry_type || "normal"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={`max-w-[300px] ${!hasConditions ? "text-red-600 dark:text-red-400 font-medium" : ""}`}>
+                          {hasConditions ? (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{program.entry_requirements || "Structured conditions set"}</p>
+                          ) : (
+                            <span className="flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> Missing Requirements</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{program.degree_type && <Badge variant="outline">{program.degree_type}</Badge>}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs ${program.is_active ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}>
+                            {program.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(program)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(program.id)} className="text-destructive hover:text-destructive">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
                 </TableBody>

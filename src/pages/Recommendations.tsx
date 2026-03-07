@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { 
+import {
   GraduationCap, Target, MapPin, Clock, ChevronRight, ArrowLeft, BookOpen,
   Search, Star, ExternalLink, Lightbulb, TrendingUp, X
 } from "lucide-react";
@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Program = Tables<"programs"> & { 
+type Program = Tables<"programs"> & {
   universities?: Tables<"universities">;
   program_subjects?: Array<{ subjects?: Tables<"subjects">; is_required?: boolean; minimum_grade?: string | null; }>;
 };
@@ -50,6 +50,7 @@ const Recommendations = () => {
   const [searchParams] = useSearchParams();
   const universityCountFilter = parseInt(searchParams.get("universities") || "0");
   const levelFilter = searchParams.get("level") || "";
+  const uniIdsParam = searchParams.get("uni_ids") || "";
   const [starredIds, setStarredIds] = useState<Set<string>>(new Set());
   const [starCount, setStarCount] = useState(0);
 
@@ -113,7 +114,7 @@ const Recommendations = () => {
 
   const calculateMatchScore = (program: Program) => {
     if (studentSubjects.length === 0) return { score: 0, matched: 0, total: 0, details: [] as string[], qualifies: false, hasConditions: false };
-    
+
     const structured: any[] = (program as any).structured_requirements || [];
     const conditionLogic: string = (program as any).condition_logic || "AND";
     const details: string[] = [];
@@ -122,7 +123,7 @@ const Recommendations = () => {
     const requiredSubjects = program.program_subjects?.filter(ps => ps.is_required) || [];
     const optionalSubjects = program.program_subjects?.filter(ps => !ps.is_required) || [];
     const hasConditions = structured.length > 0 || requiredSubjects.length > 0 || optionalSubjects.length > 0;
-    
+
     if (!hasConditions) {
       return { score: 0, matched: 0, total: 0, details: ["No entry conditions set"], qualifies: false, hasConditions: false };
     }
@@ -145,7 +146,7 @@ const Recommendations = () => {
 
         const validPasses = countValidPasses(qLevel, minGrade);
         let compulsorySatisfied = true;
-        
+
         for (const subjName of compulsorySubjects) {
           const studentMatch = studentSubjects.find(ss => (ss.subjects?.name || "").toLowerCase() === subjName.toLowerCase());
           if (!studentMatch || !meetsGradeRequirement(studentMatch.grade, minGrade)) {
@@ -174,7 +175,7 @@ const Recommendations = () => {
       }
 
       const qualifies = conditionLogic === "AND" ? blocksPassed === totalBlocks : blocksPassed > 0;
-      
+
       // Rule 2: 100% if all met, Rule 3: 50% if compulsory met but optional missed
       let score;
       if (blocksPassed === totalBlocks) score = 100;
@@ -217,11 +218,29 @@ const Recommendations = () => {
     const sorted = getSortedOLevelSubjects();
     const matched: string[] = [];
     let totalIdx = 0, bestGrade: string | null = null;
+
+    // A mapping helper to match typical O-level names to A-level names
+    const matchesSubject = (oLevelName: string, aLevelName: string) => {
+      const o = oLevelName.toLowerCase();
+      const a = aLevelName.toLowerCase();
+      if (o === a || o.includes(a) || a.includes(o)) return true;
+      // Common Zimsec mappings
+      if (a.includes("math") && o.includes("math")) return true;
+      if (a.includes("physics") && (o.includes("physics") || o.includes("physical science") || o.includes("science"))) return true;
+      if (a.includes("chemistry") && (o.includes("chemistry") || o.includes("physical science") || o.includes("science"))) return true;
+      if (a.includes("biology") && (o.includes("biology") || o.includes("science"))) return true;
+      if (a.includes("business") && (o.includes("business") || o.includes("commerce") || o.includes("accounts"))) return true;
+      if (a.includes("accounting") && (o.includes("account") || o.includes("commerce"))) return true;
+      if (a.includes("literature") && (o.includes("literature") || o.includes("english"))) return true;
+      if (a.includes("history") && o.includes("history")) return true;
+      if (a.includes("geography") && o.includes("geography")) return true;
+      if (a.includes("agriculture") && o.includes("agriculture")) return true;
+      if (a.includes("computer") && (o.includes("computer") || o.includes("ict"))) return true;
+      return false;
+    };
+
     for (const cs of combination.subjects) {
-      const m = sorted.find(ss => {
-        const name = ss.subjects?.name?.toLowerCase() || "";
-        return name === cs.toLowerCase() || name.includes(cs.toLowerCase()) || cs.toLowerCase().includes(name);
-      });
+      const m = sorted.find(ss => matchesSubject(ss.subjects?.name || "", cs));
       if (m) {
         matched.push(cs);
         const idx = getGradeIndex(m.grade);
@@ -252,14 +271,24 @@ const Recommendations = () => {
     })
     .sort((a, b) => b.matchData.score - a.matchData.score);
 
+  // Determine allowed university IDs
+  const allowedUniIds = uniIdsParam && uniIdsParam !== "all" ? uniIdsParam.split(",") : [];
+
   const getFilteredByPayment = () => {
-    if (universityCountFilter === 0 || universityCountFilter >= universities.length) return filteredPrograms;
+    let baseList = filteredPrograms;
+
+    // Explicit university limit filter
+    if (allowedUniIds.length > 0) {
+      baseList = baseList.filter(p => allowedUniIds.includes(p.university_id));
+    }
+
+    if (universityCountFilter === 0 || universityCountFilter >= universities.length) return baseList;
     const uniScores = new Map<string, number>();
-    filteredPrograms.forEach(p => {
+    baseList.forEach(p => {
       uniScores.set(p.university_id, (uniScores.get(p.university_id) || 0) + p.matchData.score);
     });
     const topUnis = Array.from(uniScores.entries()).sort((a, b) => b[1] - a[1]).slice(0, universityCountFilter).map(([id]) => id);
-    return filteredPrograms.filter(p => topUnis.includes(p.university_id));
+    return baseList.filter(p => topUnis.includes(p.university_id));
   };
   const displayPrograms = getFilteredByPayment();
 
@@ -297,14 +326,14 @@ const Recommendations = () => {
           <div className="space-y-8">
             <Card><CardHeader>
               <CardTitle className="flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Your O-Level Subjects</CardTitle>
-              <CardDescription>Based on your results, here are your best A-Level options</CardDescription>
+              <CardDescription>Possibly A Level subject combination set by admin, the student qualifies for based on their O Level results.</CardDescription>
             </CardHeader><CardContent>
-              <div className="flex flex-wrap gap-2">
-                {getSortedOLevelSubjects().map(ss => (
-                  <Badge key={ss.id} variant={getGradeIndex(ss.grade) <= 2 ? "default" : "secondary"}>{ss.subjects?.name}: {ss.grade}</Badge>
-                ))}
-              </div>
-            </CardContent></Card>
+                <div className="flex flex-wrap gap-2">
+                  {getSortedOLevelSubjects().map(ss => (
+                    <Badge key={ss.id} variant={getGradeIndex(ss.grade) <= 2 ? "default" : "secondary"}>{ss.subjects?.name}: {ss.grade}</Badge>
+                  ))}
+                </div>
+              </CardContent></Card>
 
             <div>
               <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><Lightbulb className="w-6 h-6 text-yellow-500" /> Recommended A-Level Combinations</h2>

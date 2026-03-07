@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { 
-  GraduationCap, 
+import {
+  GraduationCap,
   User,
   LogOut,
   Bell,
@@ -93,39 +93,6 @@ const Dashboard = () => {
     await supabase.from("favourite_programs").delete().eq("id", id);
     setFavourites(prev => prev.filter(f => f.id !== id));
     toast.success("Removed from favourites");
-  };
-
-  const downloadPDF = () => {
-    if (favourites.length === 0) { toast.error("No programmes to download"); return; }
-    const studentName = profile?.full_name || user?.user_metadata?.full_name || "Student";
-    const date = new Date().toLocaleDateString();
-    
-    // Generate simple HTML-based PDF content
-    const content = `
-      <html><head><title>Favoured Programs</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 40px; }
-        h1 { color: #333; font-size: 24px; }
-        .info { color: #666; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #f0f0f0; padding: 12px; text-align: left; border: 1px solid #ddd; }
-        td { padding: 10px; border: 1px solid #ddd; }
-        .match { font-weight: bold; }
-      </style></head><body>
-      <h1>🎓 EduGuide Zimbabwe - Favoured Programs</h1>
-      <div class="info"><p><strong>Student:</strong> ${studentName}</p><p><strong>Date:</strong> ${date}</p></div>
-      <table>
-        <thead><tr><th>#</th><th>Program</th><th>University</th><th>Match %</th></tr></thead>
-        <tbody>${favourites.map((f, i) => `<tr><td>${i + 1}</td><td>${f.program_name}</td><td>${f.university_name}</td><td class="match">${f.match_percentage}%</td></tr>`).join("")}</tbody>
-      </table>
-      </body></html>
-    `;
-    const blob = new Blob([content], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const printWindow = window.open(url, "_blank");
-    if (printWindow) {
-      printWindow.onload = () => { printWindow.print(); };
-    }
   };
 
   const getGreeting = () => {
@@ -247,56 +214,23 @@ const Dashboard = () => {
               </div>
               <h3 className="font-semibold text-lg text-foreground mb-1.5">Favoured Programs</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {favourites.length === 0 
+                {favourites.length === 0
                   ? "Star up to 5 programs from recommendations to save them here."
                   : `You have ${favourites.length} starred program${favourites.length > 1 ? "s" : ""}.`
                 }
               </p>
               {favourites.length > 0 && (
-                <Button variant="outline" size="sm" className="w-full mb-2" onClick={downloadPDF}>
-                  <Download className="w-4 h-4 mr-1.5" /> Download as PDF
+                <Button variant="outline" size="sm" className="w-full mb-2" asChild>
+                  <Link to="/favored-programs">
+                    <Star className="w-4 h-4 mr-1.5" /> View Favoured
+                  </Link>
                 </Button>
               )}
             </CardContent>
           </Card>
         </section>
 
-        {/* Favoured Programs List */}
-        {favourites.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-500" /> Your Starred Programs
-            </h2>
-            <div className="space-y-3">
-              {favourites.map((fav) => (
-                <Card key={fav.id} className="border border-border shadow-sm hover:shadow-md transition-all">
-                  <CardContent className="py-4 px-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                          fav.match_percentage >= 80 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
-                          : fav.match_percentage >= 50 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                          : "bg-muted text-muted-foreground"
-                        }`}>
-                          {fav.match_percentage}%
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-semibold text-sm text-foreground truncate">{fav.program_name}</h4>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <Building2 className="w-3 h-3" /> {fav.university_name}
-                          </p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-yellow-500 hover:text-destructive flex-shrink-0" onClick={() => removeFavourite(fav.id)}>
-                        <Star className="w-4 h-4 fill-current" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        )}
+
 
         {/* Rating */}
         <Card className="border border-border shadow-sm">
