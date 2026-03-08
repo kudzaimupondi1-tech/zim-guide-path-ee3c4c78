@@ -632,20 +632,20 @@ const MySubjects = () => {
 
             {/* Action bar */}
             <div className="sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border -mx-4 px-4 py-3">
-              <div className="flex items-center justify-between max-w-2xl mx-auto">
-                <Button variant="outline" size="sm" onClick={() => setStep("add")} className="rounded-xl">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 max-w-2xl mx-auto">
+                <Button variant="outline" size="sm" onClick={() => setStep("add")} className="rounded-xl order-2 sm:order-1">
                   <ArrowLeft className="w-4 h-4 mr-1.5" /> Edit
                 </Button>
                 {studentLevel === "O-Level" ? (
-                  <div className="flex flex-col items-end gap-2.5">
+                  <div className="flex flex-col items-stretch gap-2.5 order-1 sm:order-2">
                     {!isAdmin && (
                       <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
+                        <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
                         <Input
                           placeholder="EcoCash number"
                           value={phoneNumber}
                           onChange={e => setPhoneNumber(e.target.value)}
-                          className="h-9 w-44 text-sm"
+                          className="h-9 text-sm"
                         />
                       </div>
                     )}
@@ -661,7 +661,7 @@ const MySubjects = () => {
                 ) : (
                   <Button
                     onClick={() => setStep("university")}
-                    className="h-10 rounded-xl font-semibold px-6"
+                    className="h-10 rounded-xl font-semibold px-6 order-1 sm:order-2"
                   >
                     Select Universities <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
