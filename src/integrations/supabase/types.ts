@@ -572,6 +572,38 @@ export type Database = {
           },
         ]
       }
+      student_diplomas: {
+        Row: {
+          classification: string | null
+          created_at: string
+          diploma_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          classification?: string | null
+          created_at?: string
+          diploma_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          classification?: string | null
+          created_at?: string
+          diploma_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_diplomas_diploma_id_fkey"
+            columns: ["diploma_id"]
+            isOneToOne: false
+            referencedRelation: "diplomas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_notifications: {
         Row: {
           action_url: string | null

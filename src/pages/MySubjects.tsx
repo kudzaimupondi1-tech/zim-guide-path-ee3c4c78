@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   GraduationCap, Plus, BookOpen, ArrowLeft, Loader2, AlertCircle, CheckCircle2,
-  ChevronRight, Phone, CreditCard, Building2, Trash2, Search, Shield, Sparkles, Check
+  ChevronRight, Phone, CreditCard, Building2, Trash2, Search, Shield, Sparkles, Check, Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,8 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Subject = Tables<"subjects">;
 type StudentSubject = Tables<"student_subjects"> & { subjects?: Subject };
+type DiplomaType = { id: string; name: string; institution: string | null; field: string | null; level: string; };
+type StudentDiploma = { id: string; diploma_id: string; classification: string | null; diplomas?: DiplomaType; };
 
 const grades = ["A", "B", "C", "D", "E", "O", "F"];
 
@@ -79,6 +81,11 @@ const MySubjects = () => {
   const [uniSearch, setUniSearch] = useState("");
   const [oLevelSearch, setOLevelSearch] = useState("");
   const [aLevelSearch, setALevelSearch] = useState("");
+  const [availableDiplomas, setAvailableDiplomas] = useState<DiplomaType[]>([]);
+  const [studentDiplomas, setStudentDiplomas] = useState<StudentDiploma[]>([]);
+  const [selectedDiplomaId, setSelectedDiplomaId] = useState("");
+  const [selectedClassification, setSelectedClassification] = useState("Pass");
+  const [diplomaSearch, setDiplomaSearch] = useState("");
 
   const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [selectedUniversities, setSelectedUniversities] = useState<string[]>([]);
@@ -107,12 +114,16 @@ const MySubjects = () => {
 
   const fetchData = async (userId: string) => {
     try {
-      const [subjectsRes, adminRes] = await Promise.all([
+      const [subjectsRes, adminRes, diplomasRes, studentDiplomasRes] = await Promise.all([
         supabase.from("subjects").select("*").eq("is_active", true).order("name"),
         supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+        supabase.from("diplomas").select("id, name, institution, field, level").eq("is_active", true).order("name"),
+        supabase.from("student_diplomas").select("id, diploma_id, classification, diplomas(id, name, institution, field, level)").eq("user_id", userId),
       ]);
       setAvailableSubjects(subjectsRes.data || []);
       setIsAdmin(!!adminRes.data);
+      setAvailableDiplomas((diplomasRes.data || []) as DiplomaType[]);
+      setStudentDiplomas((studentDiplomasRes.data || []) as any);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -123,9 +134,51 @@ const MySubjects = () => {
   const handleSelectLevel = async (level: "O-Level" | "A-Level") => {
     if (!user) return;
     setStudentLevel(level);
-    await supabase.from("student_subjects").delete().eq("user_id", user.id);
+    await Promise.all([
+      supabase.from("student_subjects").delete().eq("user_id", user.id),
+      supabase.from("student_diplomas").delete().eq("user_id", user.id),
+    ]);
     setSessionSubjects([]);
+    setStudentDiplomas([]);
     setStep("add");
+  };
+
+  const handleAddDiploma = async () => {
+    if (!selectedDiplomaId || !user) {
+      toast.error("Please select a diploma");
+      return;
+    }
+    if (studentDiplomas.some(sd => sd.diploma_id === selectedDiplomaId)) {
+      toast.error("Diploma already added");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from("student_diplomas")
+        .insert({ user_id: user.id, diploma_id: selectedDiplomaId, classification: selectedClassification })
+        .select("id, diploma_id, classification, diplomas(id, name, institution, field, level)")
+        .single();
+      if (error) throw error;
+      setStudentDiplomas(prev => [...prev, data as any]);
+      setSelectedDiplomaId("");
+      setSelectedClassification("Pass");
+      toast.success("Diploma added successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add diploma");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveDiploma = async (diplomaEntry: StudentDiploma) => {
+    try {
+      await supabase.from("student_diplomas").delete().eq("id", diplomaEntry.id);
+      setStudentDiplomas(prev => prev.filter(d => d.id !== diplomaEntry.id));
+      toast.success("Diploma removed");
+    } catch {
+      toast.error("Failed to remove diploma");
+    }
   };
 
   const handleAddSubject = async (level: "O-Level" | "A-Level") => {
@@ -534,6 +587,81 @@ const MySubjects = () => {
                     {renderSubjectForm("A-Level")}
                   </>
                 )}
+
+                {/* Diploma section */}
+                {studentLevel === "A-Level" && (
+                  <>
+                    <div className="h-px bg-border" />
+                    <div className="space-y-3 rounded-xl border border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10 p-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
+                          <Award className="w-4 h-4" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-foreground">Diploma Qualifications <span className="text-xs font-normal text-muted-foreground">(optional)</span></h3>
+                        {studentDiplomas.length > 0 && (
+                          <Badge variant="outline" className="text-[10px] ml-auto">{studentDiplomas.length} added</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">If you hold a diploma, add it here for additional program matches.</p>
+
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="flex-1 relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                          <Input value={diplomaSearch} onChange={e => setDiplomaSearch(e.target.value)} placeholder="Search diplomas..." className="h-10 pl-9 text-sm" />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Select value={selectedDiplomaId} onValueChange={setSelectedDiplomaId}>
+                          <SelectTrigger className="h-10 text-sm bg-background flex-[2]">
+                            <SelectValue placeholder="Select diploma" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableDiplomas.filter(d =>
+                              d.name.toLowerCase().includes(diplomaSearch.toLowerCase()) ||
+                              (d.field || "").toLowerCase().includes(diplomaSearch.toLowerCase())
+                            ).filter(d => !studentDiplomas.some(sd => sd.diploma_id === d.id)).map(d => (
+                              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select value={selectedClassification} onValueChange={setSelectedClassification}>
+                          <SelectTrigger className="h-10 text-sm bg-background w-28">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Distinction">Distinction</SelectItem>
+                            <SelectItem value="Merit">Merit</SelectItem>
+                            <SelectItem value="Credit">Credit</SelectItem>
+                            <SelectItem value="Pass">Pass</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button onClick={handleAddDiploma} disabled={!selectedDiplomaId || saving} size="icon" className="h-10 w-10 shrink-0">
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        </Button>
+                      </div>
+
+                      {studentDiplomas.length > 0 && (
+                        <div className="space-y-1.5">
+                          {studentDiplomas.map(sd => (
+                            <div key={sd.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-amber-100/40 dark:bg-amber-900/20 group">
+                              <span className="w-7 h-7 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
+                                {(sd.classification || "P")[0]}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <span className="text-sm text-foreground truncate block">{sd.diplomas?.name || "Unknown"}</span>
+                                <span className="text-[10px] text-muted-foreground">{sd.classification}</span>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={() => handleRemoveDiploma(sd)}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -651,6 +779,30 @@ const MySubjects = () => {
                         {s.grade}
                       </div>
                       <span className="text-sm font-medium text-foreground">{s.subjects?.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Diploma summary */}
+            {studentDiplomas.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Award className="w-4 h-4 text-amber-600" />
+                  <h3 className="text-sm font-bold text-foreground">Diploma Qualifications</h3>
+                  <Badge variant="secondary" className="text-[10px] ml-auto">{studentDiplomas.length}</Badge>
+                </div>
+                <div className="rounded-xl border border-amber-200 dark:border-amber-800 overflow-hidden bg-card">
+                  {studentDiplomas.map((sd, idx) => (
+                    <div key={sd.id} className={`flex items-center gap-3 px-4 py-3 ${idx < studentDiplomas.length - 1 ? "border-b border-border" : ""}`}>
+                      <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-sm font-bold text-amber-700 dark:text-amber-400">
+                        {(sd.classification || "P")[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-foreground block truncate">{sd.diplomas?.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{sd.classification}</span>
+                      </div>
                     </div>
                   ))}
                 </div>

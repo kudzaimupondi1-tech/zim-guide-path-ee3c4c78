@@ -24,6 +24,7 @@ type Program = Tables<"programs"> & {
   program_diplomas?: Array<{ diplomas?: Tables<"diplomas">; is_required?: boolean; minimum_classification?: string | null; }>;
 };
 type StudentSubject = Tables<"student_subjects"> & { subjects?: Tables<"subjects">; };
+type StudentDiploma = { id: string; diploma_id: string; classification: string | null; diplomas?: Tables<"diplomas">; };
 type SubjectCombination = { id: string; name: string; description: string | null; subjects: string[]; career_paths: string[] | null; };
 
 const GRADE_ORDER = ["A", "B", "C", "D", "E", "O", "F"];
@@ -47,6 +48,7 @@ const Recommendations = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [studentSubjects, setStudentSubjects] = useState<StudentSubject[]>([]);
   const [combinations, setCombinations] = useState<SubjectCombination[]>([]);
+  const [studentDiplomas, setStudentDiplomas] = useState<StudentDiploma[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [selectedProgramDetail, setSelectedProgramDetail] = useState<any | null>(null);
@@ -74,12 +76,13 @@ const Recommendations = () => {
       // Track recommendation view
       supabase.from("profiles").update({ recommendation_viewed_at: new Date().toISOString() } as any).eq("user_id", userId).then();
 
-      const [subjectsData, programsData, universitiesData, combinationsData, favouritesData] = await Promise.all([
+      const [subjectsData, programsData, universitiesData, combinationsData, favouritesData, studentDiplomasData] = await Promise.all([
         supabase.from("student_subjects").select("*, subjects(*)").eq("user_id", userId),
         supabase.from("programs").select("*, universities(*), program_subjects(*, subjects(*)), program_careers(*, careers(*)), program_diplomas(*, diplomas(*))").eq("is_active", true).order("name"),
         supabase.from("universities").select("*").eq("is_active", true).order("name"),
         supabase.from("subject_combinations").select("*").eq("is_active", true).eq("level", "A-Level"),
         supabase.from("favourite_programs").select("program_id").eq("user_id", userId),
+        supabase.from("student_diplomas").select("id, diploma_id, classification, diplomas(*)").eq("user_id", userId),
       ]);
       setStudentSubjects(subjectsData.data || []);
       setPrograms(programsData.data || []);
@@ -89,6 +92,7 @@ const Recommendations = () => {
       const starred = new Set((favouritesData.data || []).map((f: any) => f.program_id));
       setStarredIds(starred);
       setStarCount(starred.size);
+      setStudentDiplomas((studentDiplomasData.data || []) as any);
     } catch (error) {
       toast.error("Failed to load recommendations");
     } finally {
@@ -298,7 +302,40 @@ const Recommendations = () => {
   };
   const allDisplayPrograms = getFilteredByPayment();
   const displayPrograms = allDisplayPrograms.filter(p => p.entry_type === 'normal' || !p.entry_type);
-  const diplomaPrograms = allDisplayPrograms.filter(p => p.entry_type && p.entry_type !== 'normal');
+
+  // Classification hierarchy for diploma matching
+  const CLASSIFICATION_ORDER = ["Distinction", "Merit", "Credit", "Pass"];
+  const meetsClassification = (studentClass: string | null, minClass: string | null): boolean => {
+    if (!minClass) return true;
+    if (!studentClass) return false;
+    return CLASSIFICATION_ORDER.indexOf(studentClass) <= CLASSIFICATION_ORDER.indexOf(minClass);
+  };
+
+  // Diploma programs: show if student has a matching diploma OR if they qualify by A-Level subjects
+  const diplomaPrograms = programs
+    .filter(p => p.entry_type && p.entry_type !== 'normal')
+    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.universities?.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+    .map(p => {
+      const matchData = calculateMatchScore(p);
+      // Check if student's diplomas match any of the program's accepted diplomas
+      const programDiplomas = p.program_diplomas || [];
+      let diplomaMatch = false;
+      let matchedDiplomaName = "";
+      for (const pd of programDiplomas) {
+        const studentHas = studentDiplomas.find(sd => sd.diploma_id === pd.diplomas?.id);
+        if (studentHas && meetsClassification(studentHas.classification, pd.minimum_classification)) {
+          diplomaMatch = true;
+          matchedDiplomaName = pd.diplomas?.name || "";
+          break;
+        }
+      }
+      // Qualify if diploma matches OR A-Level subjects match
+      const qualifies = diplomaMatch || matchData.qualifies;
+      const score = diplomaMatch ? 100 : matchData.score;
+      return { ...p, matchData: { ...matchData, qualifies, score, diplomaMatch, matchedDiplomaName } };
+    })
+    .filter(p => p.matchData.qualifies)
+    .sort((a, b) => b.matchData.score - a.matchData.score);
 
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
@@ -455,20 +492,27 @@ const Recommendations = () => {
                   <Lightbulb className="w-5 h-5 text-yellow-500" /> Alternative Pathways
                 </h2>
                 <p className="text-sm text-muted-foreground mb-4">
-                  These programs require a diploma or alternative qualification for entry. You may qualify through bridging courses or diploma programs.
+                  These programs accept diploma or alternative qualifications for entry.
+                  {studentDiplomas.length > 0 && " Programs matching your diploma are highlighted."}
                 </p>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {diplomaPrograms.map(program => (
-                    <Card key={program.id} className="group hover:shadow-lg transition-all border-dashed border-amber-300 dark:border-amber-700">
+                    <Card key={program.id} className={`group hover:shadow-lg transition-all border-dashed ${(program.matchData as any).diplomaMatch ? "border-green-400 dark:border-green-600 bg-green-50/30 dark:bg-green-950/10" : "border-amber-300 dark:border-amber-700"}`}>
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              {(program.matchData as any).diplomaMatch && (
+                                <Badge className="bg-green-600 text-white"><GraduationCap className="w-3 h-3 mr-1" /> Diploma Match</Badge>
+                              )}
                               <Badge className="bg-amber-500 text-white capitalize">{program.entry_type} Entry</Badge>
                               {program.degree_type && <Badge variant="outline">{program.degree_type}</Badge>}
                             </div>
                             <CardTitle className="text-lg">{program.name}</CardTitle>
                             <CardDescription className="flex items-center gap-1 mt-1"><GraduationCap className="w-4 h-4" />{program.universities?.name}</CardDescription>
+                            {(program.matchData as any).diplomaMatch && (program.matchData as any).matchedDiplomaName && (
+                              <p className="text-xs text-green-700 dark:text-green-400 mt-1">✓ Your {(program.matchData as any).matchedDiplomaName} qualifies</p>
+                            )}
                           </div>
                           <div className="flex flex-col items-center gap-1">
                             <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">{program.matchData.score}%</div>
