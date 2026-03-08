@@ -157,10 +157,11 @@ export default function AdminPrograms() {
 
   const fetchData = async () => {
     try {
-      const [programsRes, universitiesRes, subjectsRes] = await Promise.all([
+      const [programsRes, universitiesRes, subjectsRes, diplomasRes] = await Promise.all([
         supabase.from("programs").select("*, universities(name)").order("name"),
         supabase.from("universities").select("id, name").eq("is_active", true).order("name"),
         supabase.from("subjects").select("id, name, level, category").eq("is_active", true).order("name"),
+        supabase.from("diplomas").select("id, name, institution, field, level").eq("is_active", true).order("name"),
       ]);
 
       if (programsRes.error) throw programsRes.error;
@@ -170,6 +171,7 @@ export default function AdminPrograms() {
       setPrograms(programsRes.data || []);
       setUniversities(universitiesRes.data || []);
       setSubjects(subjectsRes.data || []);
+      setDiplomas(diplomasRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({ title: "Error", description: "Failed to load data", variant: "destructive" });
