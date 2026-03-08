@@ -195,7 +195,7 @@ const Dashboard = () => {
                   )}
                 </Button>
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                     <div className="p-4 border-b border-border bg-muted/30">
                       <h3 className="font-bold text-sm text-foreground">Notifications</h3>
                     </div>
