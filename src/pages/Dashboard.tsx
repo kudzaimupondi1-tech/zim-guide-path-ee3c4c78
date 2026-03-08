@@ -165,18 +165,18 @@ const Dashboard = () => {
     <div className="min-h-screen bg-secondary/30">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/dashboard" className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-                <GraduationCap className="w-5 h-5 text-primary-foreground" />
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            <Link to="/dashboard" className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+                <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
               </div>
               <div>
-                <span className="text-base font-bold text-foreground leading-none">EduGuide</span>
-                <span className="text-[11px] text-muted-foreground block">Zimbabwe</span>
+                <span className="text-sm sm:text-base font-bold text-foreground leading-none">EduGuide</span>
+                <span className="text-[10px] sm:text-[11px] text-muted-foreground block">Zimbabwe</span>
               </div>
             </Link>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               {/* Query Chat Icon */}
               <div className="relative">
                 <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setShowChat(!showChat)}>
