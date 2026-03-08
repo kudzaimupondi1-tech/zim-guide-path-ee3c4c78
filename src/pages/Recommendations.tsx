@@ -429,7 +429,7 @@ const Recommendations = () => {
               <Input placeholder="Search programs or universities..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 h-10" />
             </div>
 
-            <p className="text-muted-foreground mb-4">Found <span className="font-semibold text-foreground">{displayPrograms.length}</span> programs matching your grades</p>
+            <p className="text-muted-foreground mb-4">Found <span className="font-semibold text-foreground">{displayPrograms.length}</span> programs • <span className="text-green-600 font-medium">{displayPrograms.filter(p => p.matchData.score === 100).length} full matches</span></p>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {displayPrograms.map(program => (
