@@ -179,13 +179,19 @@ const Recommendations = () => {
               }
             }
           } else {
+            // If no specific diploma is required, check if student has ANY diploma
             totalRequirements++;
-            const anyMatch = studentDiplomas.some(sd => meetsClassification(sd.classification, minGrade));
-            if (anyMatch) {
-              satisfiedRequirements++;
-              details.push(`✓ ${qLevel}: Diploma/certificate submitted`);
+            if (studentDiplomas.length === 0) {
+              // Student has no diplomas at all
+              details.push(`✗ ${qLevel}: No diploma/certificate submitted`);
             } else {
-              details.push(`✗ ${qLevel}: Classification not met`);
+              const anyMatch = studentDiplomas.some(sd => meetsClassification(sd.classification, minGrade));
+              if (anyMatch) {
+                satisfiedRequirements++;
+                details.push(`✓ ${qLevel}: Diploma/certificate submitted`);
+              } else {
+                details.push(`✗ ${qLevel}: Classification not met`);
+              }
             }
           }
           continue;
