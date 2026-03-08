@@ -134,9 +134,51 @@ const MySubjects = () => {
   const handleSelectLevel = async (level: "O-Level" | "A-Level") => {
     if (!user) return;
     setStudentLevel(level);
-    await supabase.from("student_subjects").delete().eq("user_id", user.id);
+    await Promise.all([
+      supabase.from("student_subjects").delete().eq("user_id", user.id),
+      supabase.from("student_diplomas").delete().eq("user_id", user.id),
+    ]);
     setSessionSubjects([]);
+    setStudentDiplomas([]);
     setStep("add");
+  };
+
+  const handleAddDiploma = async () => {
+    if (!selectedDiplomaId || !user) {
+      toast.error("Please select a diploma");
+      return;
+    }
+    if (studentDiplomas.some(sd => sd.diploma_id === selectedDiplomaId)) {
+      toast.error("Diploma already added");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from("student_diplomas")
+        .insert({ user_id: user.id, diploma_id: selectedDiplomaId, classification: selectedClassification })
+        .select("id, diploma_id, classification, diplomas(id, name, institution, field, level)")
+        .single();
+      if (error) throw error;
+      setStudentDiplomas(prev => [...prev, data as any]);
+      setSelectedDiplomaId("");
+      setSelectedClassification("Pass");
+      toast.success("Diploma added successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add diploma");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveDiploma = async (diplomaEntry: StudentDiploma) => {
+    try {
+      await supabase.from("student_diplomas").delete().eq("id", diplomaEntry.id);
+      setStudentDiplomas(prev => prev.filter(d => d.id !== diplomaEntry.id));
+      toast.success("Diploma removed");
+    } catch {
+      toast.error("Failed to remove diploma");
+    }
   };
 
   const handleAddSubject = async (level: "O-Level" | "A-Level") => {
