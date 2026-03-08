@@ -403,6 +403,32 @@ export default function AdminPayments() {
                                     <TooltipContent>Query EcoCash</TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
+                                <AlertDialog>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <AlertDialogTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" disabled={deleteLoading === p.id}>
+                                            {deleteLoading === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Delete Payment</TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Payment Record</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete this payment by <strong>{p.profiles?.full_name || "Unknown"}</strong> for <strong>${p.amount.toFixed(2)}</strong>? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeletePayment(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </TableCell>
                           </TableRow>
