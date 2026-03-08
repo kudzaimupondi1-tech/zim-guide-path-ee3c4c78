@@ -737,6 +737,7 @@ const MySubjects = () => {
           )}
         </main>
       </div>
+    </PageTransition>
     );
   }
 
