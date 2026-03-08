@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   GraduationCap,
@@ -32,40 +33,115 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
+const REVIEWED_KEY = "admin_reviewed_modules";
+
+const getReviewed = (): Record<string, string> => {
+  try { return JSON.parse(localStorage.getItem(REVIEWED_KEY) || "{}"); } catch { return {}; }
+};
+
+const markReviewed = (url: string) => {
+  const r = getReviewed();
+  r[url] = new Date().toISOString();
+  localStorage.setItem(REVIEWED_KEY, JSON.stringify(r));
+};
+
 const dataMenuItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Universities", url: "/admin/universities", icon: Building2 },
-  { title: "Programs", url: "/admin/programs", icon: GraduationCap },
-  { title: "Subjects", url: "/admin/subjects", icon: BookOpen },
-  { title: "Combinations", url: "/admin/combinations", icon: Layers },
-  { title: "Grading", url: "/admin/grading", icon: Hash },
-  { title: "Careers", url: "/admin/careers", icon: Briefcase },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard, countKey: null },
+  { title: "Universities", url: "/admin/universities", icon: Building2, countKey: "universities" },
+  { title: "Programs", url: "/admin/programs", icon: GraduationCap, countKey: "programs" },
+  { title: "Subjects", url: "/admin/subjects", icon: BookOpen, countKey: "subjects" },
+  { title: "Combinations", url: "/admin/combinations", icon: Layers, countKey: "combinations" },
+  { title: "Grading", url: "/admin/grading", icon: Hash, countKey: "grading" },
+  { title: "Careers", url: "/admin/careers", icon: Briefcase, countKey: "careers" },
 ];
 
 const systemMenuItems = [
-  { title: "AI Config", url: "/admin/ai-config", icon: Brain },
-  { title: "Announcements", url: "/admin/announcements", icon: Megaphone },
-  { title: "Deadlines", url: "/admin/deadlines", icon: Calendar },
-  { title: "Payments", url: "/admin/payments", icon: Hash },
-  { title: "Reports", url: "/admin/reports", icon: BarChart3 },
-  { title: "Student Queries", url: "/admin/queries", icon: MessageSquare },
-  { title: "System Logs", url: "/admin/logs", icon: Layers },
-  { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
-  { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "AI Config", url: "/admin/ai-config", icon: Brain, countKey: null },
+  { title: "Announcements", url: "/admin/announcements", icon: Megaphone, countKey: "announcements" },
+  { title: "Deadlines", url: "/admin/deadlines", icon: Calendar, countKey: "deadlines" },
+  { title: "Payments", url: "/admin/payments", icon: Hash, countKey: "payments" },
+  { title: "Reports", url: "/admin/reports", icon: BarChart3, countKey: null },
+  { title: "Student Queries", url: "/admin/queries", icon: MessageSquare, countKey: "queries" },
+  { title: "System Logs", url: "/admin/logs", icon: Layers, countKey: null },
+  { title: "Analytics", url: "/admin/analytics", icon: BarChart3, countKey: null },
+  { title: "Users", url: "/admin/users", icon: Users, countKey: "users" },
+  { title: "Settings", url: "/admin/settings", icon: Settings, countKey: null },
 ];
 
 export function AdminSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [counts, setCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetchCounts();
+  }, []);
+
+  // Mark current module as reviewed when navigating
+  useEffect(() => {
+    const allItems = [...dataMenuItems, ...systemMenuItems];
+    const current = allItems.find(i => i.url === location.pathname);
+    if (current?.countKey) {
+      markReviewed(current.url);
+      setCounts(prev => ({ ...prev, [current.countKey!]: 0 }));
+    }
+  }, [location.pathname]);
+
+  const fetchCounts = async () => {
+    const reviewed = getReviewed();
+    const newCounts: Record<string, number> = {};
+
+    try {
+      // Pending queries
+      const { count: pendingQueries } = await supabase
+        .from("student_queries")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
+      newCounts.queries = pendingQueries || 0;
+
+      // Pending payments
+      const { count: pendingPayments } = await supabase
+        .from("payments")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
+      newCounts.payments = pendingPayments || 0;
+
+      // New users since last review
+      const usersReviewedAt = reviewed["/admin/users"];
+      if (usersReviewedAt) {
+        const { count: newUsers } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .gt("created_at", usersReviewedAt);
+        newCounts.users = newUsers || 0;
+      } else {
+        const { count: totalUsers } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true });
+        newCounts.users = totalUsers || 0;
+      }
+
+      // Clear counts for currently viewed module
+      const allItems = [...dataMenuItems, ...systemMenuItems];
+      const current = allItems.find(i => i.url === location.pathname);
+      if (current?.countKey) {
+        newCounts[current.countKey] = 0;
+      }
+
+      setCounts(newCounts);
+    } catch (error) {
+      console.error("Error fetching sidebar counts:", error);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
   };
 
-  const renderMenuItem = (item: { title: string; url: string; icon: any }) => {
+  const renderMenuItem = (item: { title: string; url: string; icon: any; countKey: string | null }) => {
     const isActive = location.pathname === item.url;
+    const count = item.countKey ? counts[item.countKey] || 0 : 0;
     return (
       <SidebarMenuItem key={item.title}>
         <SidebarMenuButton asChild>
@@ -78,7 +154,12 @@ export function AdminSidebar() {
             }`}
           >
             <item.icon className="w-5 h-5" />
-            <span>{item.title}</span>
+            <span className="flex-1">{item.title}</span>
+            {count > 0 && (
+              <span className="min-w-[20px] h-5 px-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>

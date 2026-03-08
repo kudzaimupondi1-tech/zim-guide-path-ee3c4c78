@@ -36,7 +36,7 @@ const meetsGradeRequirement = (studentGrade: string | null, minGrade: string | n
   return getGradeIndex(studentGrade) <= getGradeIndex(minGrade);
 };
 
-const MAX_STARS = 5;
+const MAX_STARS = 10;
 
 const Recommendations = () => {
   const navigate = useNavigate();
