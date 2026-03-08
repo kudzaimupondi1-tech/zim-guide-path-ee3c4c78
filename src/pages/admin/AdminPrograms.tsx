@@ -1148,17 +1148,16 @@ export default function AdminPrograms() {
                             <Label className="text-xs">Qualification Type</Label>
                             <Select value={req.qualification_type} onValueChange={(v) => {
                               updateRequirementCondition(idx, "qualification_type", v);
-                              if (v === "Diploma") {
+                              if (DIPLOMA_LIKE_TYPES.includes(v)) {
                                 updateRequirementCondition(idx, "min_grade", "");
                                 if (!req.min_classification) updateRequirementCondition(idx, "min_classification", "Pass");
                               }
                             }}>
                               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="O-Level">O-Level</SelectItem>
-                                <SelectItem value="A-Level">A-Level</SelectItem>
-                                <SelectItem value="Diploma">Diploma</SelectItem>
-                                <SelectItem value="Certificate">Certificate</SelectItem>
+                                {ALL_QUALIFICATION_TYPES.map((qt) => (
+                                  <SelectItem key={qt} value={qt}>{qt}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
