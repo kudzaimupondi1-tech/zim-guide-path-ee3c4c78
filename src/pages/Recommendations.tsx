@@ -21,6 +21,7 @@ type Program = Tables<"programs"> & {
   universities?: Tables<"universities">;
   program_subjects?: Array<{ subjects?: Tables<"subjects">; is_required?: boolean; minimum_grade?: string | null; }>;
   program_careers?: Array<{ careers?: Tables<"careers"> }>;
+  program_diplomas?: Array<{ diplomas?: Tables<"diplomas">; is_required?: boolean; minimum_classification?: string | null; }>;
 };
 type StudentSubject = Tables<"student_subjects"> & { subjects?: Tables<"subjects">; };
 type SubjectCombination = { id: string; name: string; description: string | null; subjects: string[]; career_paths: string[] | null; };
