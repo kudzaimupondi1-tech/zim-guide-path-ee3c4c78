@@ -402,6 +402,7 @@ const MySubjects = () => {
   // STEP: Add Subjects
   if (step === "add") {
     return (
+      <PageTransition>
       <div className="min-h-screen bg-secondary/30">
         <header className="sticky top-0 z-50 bg-card border-b border-border">
           <div className="container mx-auto px-4">
