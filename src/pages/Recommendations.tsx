@@ -253,15 +253,11 @@ const Recommendations = () => {
       if (sub && meetsGradeRequirement(sub.grade, opt.minimum_grade)) optionalMatched++;
     }
 
-    const qualifies = requiredFailed === 0;
     const totalItems = requiredSubjects.length + optionalSubjects.length;
     const matchedItems = requiredMatched + optionalMatched;
-    let score;
-    if (requiredFailed === 0 && optionalSubjects.length > 0 && optionalMatched < optionalSubjects.length) score = 50;
-    else if (requiredFailed === 0) score = 100;
-    else score = 0; // Does not qualify
+    const score = totalItems > 0 ? Math.round((matchedItems / totalItems) * 100) : 0;
 
-    return { score, matched: requiredMatched + optionalMatched, total: requiredSubjects.length + optionalSubjects.length, details, qualifies, hasConditions: true };
+    return { score, matched: matchedItems, total: totalItems, details, qualifies: score > 0, hasConditions: true };
   };
 
   const getSortedOLevelSubjects = () => studentSubjects.filter(ss => ss.level === "O-Level").sort((a, b) => getGradeIndex(a.grade) - getGradeIndex(b.grade));
