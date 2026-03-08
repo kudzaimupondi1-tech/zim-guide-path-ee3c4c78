@@ -232,7 +232,10 @@ const Recommendations = () => {
         }
       }
 
-      const score = totalRequirements > 0 ? Math.round((satisfiedRequirements / totalRequirements) * 100) : 0;
+      const score = totalRequirements > 0 
+        ? (satisfiedRequirements === totalRequirements ? 100 : 
+           (satisfiedRequirements >= Math.ceil(totalRequirements / 2) ? 50 : 0)) 
+        : 0;
       return { score, matched: satisfiedRequirements, total: totalRequirements, details, qualifies: score > 0, hasConditions: true };
     }
 
@@ -253,9 +256,17 @@ const Recommendations = () => {
       if (sub && meetsGradeRequirement(sub.grade, opt.minimum_grade)) optionalMatched++;
     }
 
+    let score = 0;
+    if (requiredFailed === 0) {
+      if (optionalSubjects.length > 0) {
+        score = optionalMatched === optionalSubjects.length ? 100 : 50;
+      } else {
+        score = 100;
+      }
+    }
+
     const totalItems = requiredSubjects.length + optionalSubjects.length;
     const matchedItems = requiredMatched + optionalMatched;
-    const score = totalItems > 0 ? Math.round((matchedItems / totalItems) * 100) : 0;
 
     return { score, matched: matchedItems, total: totalItems, details, qualifies: score > 0, hasConditions: true };
   };
