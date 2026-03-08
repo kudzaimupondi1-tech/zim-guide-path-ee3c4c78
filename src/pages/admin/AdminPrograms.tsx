@@ -1362,9 +1362,14 @@ export default function AdminPrograms() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(program)}>
+                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(program)} title="Edit program">
                               <Pencil className="w-4 h-4" />
                             </Button>
+                            {((program as any).entry_type === "diploma" || (program as any).entry_type === "special") && (
+                              <Button variant="ghost" size="icon" onClick={() => openDiplomaDialog(program)} title="Manage diploma requirements" className="text-amber-600 hover:text-amber-700">
+                                <GraduationCap className="w-4 h-4" />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" onClick={() => handleDelete(program.id)} className="text-destructive hover:text-destructive">
                               <Trash2 className="w-4 h-4" />
                             </Button>
