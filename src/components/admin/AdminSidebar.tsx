@@ -14,6 +14,7 @@ import {
   BarChart3,
   Layers,
   Hash,
+  MessageSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -47,6 +48,7 @@ const systemMenuItems = [
   { title: "Deadlines", url: "/admin/deadlines", icon: Calendar },
   { title: "Payments", url: "/admin/payments", icon: Hash },
   { title: "Reports", url: "/admin/reports", icon: BarChart3 },
+  { title: "Student Queries", url: "/admin/queries", icon: MessageSquare },
   { title: "System Logs", url: "/admin/logs", icon: Layers },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Users", url: "/admin/users", icon: Users },

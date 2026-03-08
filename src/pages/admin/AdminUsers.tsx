@@ -38,6 +38,7 @@ interface Profile {
   email: string | null;
   phone: string | null;
   created_at: string;
+  recommendation_viewed_at: string | null;
 }
 
 interface UserRole {
@@ -305,6 +306,7 @@ export default function AdminUsers() {
                         <TableHead>Email</TableHead>
                         <TableHead>Phone</TableHead>
                         <TableHead>Roles</TableHead>
+                        <TableHead>Recommendations</TableHead>
                         <TableHead>Joined</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -351,6 +353,13 @@ export default function AdminUsers() {
                                   <Plus className="w-3 h-3" />
                                 </Button>
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              {(profile as any).recommendation_viewed_at ? (
+                                <Badge variant="default" className="text-xs">Viewed</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">Not viewed</Badge>
+                              )}
                             </TableCell>
                             <TableCell>{formatDate(profile.created_at)}</TableCell>
                             <TableCell className="text-right">
