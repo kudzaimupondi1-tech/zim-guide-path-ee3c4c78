@@ -241,7 +241,7 @@ const Dashboard = () => {
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-3xl">
         {/* Welcome */}
         <section className="mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight">
             {getGreeting()}, {getUserName()} 👋
           </h1>
           <p className="text-muted-foreground mt-1.5 text-sm">Your personalised university guidance starts here.</p>
