@@ -48,6 +48,7 @@ const Recommendations = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [studentSubjects, setStudentSubjects] = useState<StudentSubject[]>([]);
   const [combinations, setCombinations] = useState<SubjectCombination[]>([]);
+  const [studentDiplomas, setStudentDiplomas] = useState<StudentDiploma[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [universities, setUniversities] = useState<Tables<"universities">[]>([]);
   const [selectedProgramDetail, setSelectedProgramDetail] = useState<any | null>(null);
