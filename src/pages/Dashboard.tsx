@@ -107,6 +107,7 @@ const Dashboard = () => {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-secondary/30">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
