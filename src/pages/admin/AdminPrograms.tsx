@@ -30,7 +30,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Loader2, BookOpen, Upload, Download, FileSpreadsheet, FileText, Search, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, BookOpen, Upload, Download, FileSpreadsheet, FileText, Search, AlertCircle, XCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useExcelImportExport, ExcelColumn } from "@/hooks/useExcelImportExport";
@@ -225,6 +236,24 @@ export default function AdminPrograms() {
     } catch (error) {
       console.error("Error deleting program:", error);
       toast({ title: "Error", description: "Failed to delete program", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setIsSubmitting(true);
+    try {
+      // Delete all program_subjects, program_careers, then programs
+      await supabase.from("program_subjects").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      await supabase.from("program_careers").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      const { error } = await supabase.from("programs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (error) throw error;
+      toast({ title: "Success", description: "All programs deleted successfully" });
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting all programs:", error);
+      toast({ title: "Error", description: "Failed to delete all programs", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -675,6 +704,27 @@ export default function AdminPrograms() {
             <p className="text-muted-foreground mt-1">Manage university programs and their subject requirements</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" disabled={programs.length === 0 || isSubmitting}>
+                  <XCircle className="w-4 h-4 mr-2" /> Delete All
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete All Programs?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete all {programs.length} programs, their subject requirements, and career links. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Yes, Delete All
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button variant="outline" size="sm" onClick={() => downloadTemplate(programColumns, "programs")}>
               <FileSpreadsheet className="w-4 h-4 mr-2" /> Template
             </Button>
