@@ -785,6 +785,30 @@ const MySubjects = () => {
               </div>
             )}
 
+            {/* Diploma summary */}
+            {studentDiplomas.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Award className="w-4 h-4 text-amber-600" />
+                  <h3 className="text-sm font-bold text-foreground">Diploma Qualifications</h3>
+                  <Badge variant="secondary" className="text-[10px] ml-auto">{studentDiplomas.length}</Badge>
+                </div>
+                <div className="rounded-xl border border-amber-200 dark:border-amber-800 overflow-hidden bg-card">
+                  {studentDiplomas.map((sd, idx) => (
+                    <div key={sd.id} className={`flex items-center gap-3 px-4 py-3 ${idx < studentDiplomas.length - 1 ? "border-b border-border" : ""}`}>
+                      <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-sm font-bold text-amber-700 dark:text-amber-400">
+                        {(sd.classification || "P")[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-foreground block truncate">{sd.diplomas?.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{sd.classification}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Action bar */}
             <div className="sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border -mx-4 px-4 py-3">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 max-w-2xl mx-auto">
