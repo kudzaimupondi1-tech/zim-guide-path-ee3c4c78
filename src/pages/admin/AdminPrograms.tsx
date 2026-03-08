@@ -58,6 +58,14 @@ interface Subject {
   category: string | null;
 }
 
+interface Diploma {
+  id: string;
+  name: string;
+  institution: string | null;
+  field: string | null;
+  level: string;
+}
+
 interface Program {
   id: string;
   name: string;
