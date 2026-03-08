@@ -384,7 +384,7 @@ const Recommendations = () => {
       const score = diplomaMatch ? 100 : matchData.score;
       return { ...p, matchData: { ...matchData, qualifies, score, diplomaMatch, matchedDiplomaName } };
     })
-    .filter(p => p.matchData.qualifies)
+    .filter(p => p.matchData.score > 0)
     .sort((a, b) => b.matchData.score - a.matchData.score);
 
   if (loading) {
