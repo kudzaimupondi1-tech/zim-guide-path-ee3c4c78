@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     
     const { phone_number, amount, university_count } = await req.json();
 
-    if (!phone_number || !amount || !university_count) {
+    if (!phone_number || amount === undefined || amount === null || university_count === undefined || university_count === null) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
