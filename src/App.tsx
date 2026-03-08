@@ -72,10 +72,10 @@ const App = () => (
           <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/logs" element={<AdminLogs />} />
+          <Route path="/admin/queries" element={<AdminQueries />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
-        <StudentChatbot />
+        
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

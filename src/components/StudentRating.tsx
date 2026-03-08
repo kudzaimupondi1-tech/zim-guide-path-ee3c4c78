@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const MAX_STARS = 10;
+
 export const StudentRating = () => {
-  const [currentRating, setCurrentRating] = useState<string | null>(null);
+  const [currentRating, setCurrentRating] = useState<number>(0);
+  const [hoverRating, setHoverRating] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -16,13 +19,13 @@ export const StudentRating = () => {
     if (!user) return;
     const { data } = await supabase
       .from("system_ratings")
-      .select("rating_type")
+      .select("star_rating")
       .eq("user_id", user.id)
       .maybeSingle();
-    if (data) setCurrentRating(data.rating_type);
+    if (data?.star_rating) setCurrentRating(data.star_rating);
   };
 
-  const handleRate = async (type: "like" | "dislike") => {
+  const handleRate = async (stars: number) => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -30,11 +33,15 @@ export const StudentRating = () => {
 
       const { error } = await supabase
         .from("system_ratings")
-        .upsert({ user_id: user.id, rating_type: type }, { onConflict: "user_id" });
+        .upsert({
+          user_id: user.id,
+          rating_type: `${stars}-star`,
+          star_rating: stars,
+        } as any, { onConflict: "user_id" });
 
       if (error) throw error;
-      setCurrentRating(type);
-      toast.success(type === "like" ? "Thanks for the positive feedback! 🎉" : "Thanks for your feedback. We'll work to improve!");
+      setCurrentRating(stars);
+      toast.success(stars >= 7 ? "Thanks for the great rating! 🎉" : stars >= 4 ? "Thanks for your feedback!" : "Thanks for your feedback. We'll work to improve!");
     } catch (error: any) {
       toast.error("Failed to submit rating");
     } finally {
@@ -42,32 +49,33 @@ export const StudentRating = () => {
     }
   };
 
+  const displayRating = hoverRating || currentRating;
+
   return (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={() => handleRate("like")}
-        disabled={loading}
-        className={`group flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-          currentRating === "like"
-            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 ring-2 ring-green-300 dark:ring-green-700"
-            : "bg-muted hover:bg-green-50 dark:hover:bg-green-950/20 text-muted-foreground hover:text-green-600 dark:hover:text-green-400"
-        }`}
-      >
-        <ThumbsUp className={`w-4 h-4 transition-transform ${currentRating === "like" ? "scale-110" : "group-hover:scale-110"}`} />
-        <span>Like</span>
-      </button>
-      <button
-        onClick={() => handleRate("dislike")}
-        disabled={loading}
-        className={`group flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-          currentRating === "dislike"
-            ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 ring-2 ring-red-300 dark:ring-red-700"
-            : "bg-muted hover:bg-red-50 dark:hover:bg-red-950/20 text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
-        }`}
-      >
-        <ThumbsDown className={`w-4 h-4 transition-transform ${currentRating === "dislike" ? "scale-110" : "group-hover:scale-110"}`} />
-        <span>Dislike</span>
-      </button>
+    <div className="flex flex-col items-end gap-1.5">
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: MAX_STARS }, (_, i) => i + 1).map((star) => (
+          <button
+            key={star}
+            onClick={() => handleRate(star)}
+            onMouseEnter={() => setHoverRating(star)}
+            onMouseLeave={() => setHoverRating(0)}
+            disabled={loading}
+            className="p-0.5 transition-transform hover:scale-110 disabled:opacity-50"
+          >
+            <Star
+              className={`w-5 h-5 transition-colors ${
+                star <= displayRating
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-muted-foreground/30"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+      {currentRating > 0 && (
+        <span className="text-[11px] text-muted-foreground">{currentRating}/10</span>
+      )}
     </div>
   );
 };
