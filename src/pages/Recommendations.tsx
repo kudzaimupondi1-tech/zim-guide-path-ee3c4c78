@@ -320,7 +320,7 @@ const Recommendations = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {studentSubjects.length === 0 ? (
           <Card><CardContent className="py-12 text-center">
             <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
