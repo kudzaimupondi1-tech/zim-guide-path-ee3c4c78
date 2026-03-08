@@ -339,42 +339,54 @@ const MySubjects = () => {
   if (step === "level") {
     return (
       <div className="min-h-screen bg-secondary/30">
-        <header className="sticky top-0 z-50 bg-card border-b border-border">
+        <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
           <div className="container mx-auto px-4">
-            <div className="flex items-center h-14 gap-3">
-              <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
-                <Link to="/dashboard"><ArrowLeft className="w-[18px] h-[18px]" /></Link>
+            <div className="flex items-center h-16 gap-3">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" asChild>
+                <Link to="/dashboard"><ArrowLeft className="w-5 h-5" /></Link>
               </Button>
-              <span className="font-bold text-sm text-foreground">Add Subjects</span>
+              <div>
+                <span className="font-bold text-foreground">Add Subjects</span>
+                <span className="text-xs text-muted-foreground block">Choose your level to begin</span>
+              </div>
             </div>
           </div>
         </header>
-        <main className="container mx-auto px-4 py-12 max-w-lg">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-foreground">Select Your Academic Level</h1>
-            <p className="text-sm text-muted-foreground mt-2">Choose your current level to start adding subjects</p>
+        <main className="container mx-auto px-4 py-10 max-w-lg">
+          <div className="text-center mb-10">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <GraduationCap className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">What's your academic level?</h1>
+            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">Select your current level so we can guide you to the right recommendations.</p>
           </div>
           <div className="space-y-4">
-            <Card className="border-2 border-border hover:border-primary/50 cursor-pointer transition-all hover:shadow-md" onClick={() => handleSelectLevel("O-Level")}>
+            <Card className="border-2 border-border hover:border-primary/50 cursor-pointer transition-all duration-200 hover:shadow-lg group overflow-hidden relative" onClick={() => handleSelectLevel("O-Level")}>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
               <CardContent className="py-8 px-6 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                   <BookOpen className="w-7 h-7 text-primary" />
                 </div>
                 <h2 className="text-lg font-bold text-foreground mb-1">O Level Student</h2>
-                <p className="text-sm text-muted-foreground">Enter O-Level subjects → Get A-Level combination recommendations</p>
-                <p className="text-xs text-primary font-semibold mt-2">$1.00 for recommendations</p>
-                <Button className="mt-5 w-full" size="sm">Continue as O Level</Button>
+                <p className="text-sm text-muted-foreground mb-3">Enter your O-Level results and get A-Level combination recommendations</p>
+                <Badge className="bg-primary/10 text-primary border-primary/20 font-semibold">$1.00 for recommendations</Badge>
+                <Button className="mt-5 w-full h-11 rounded-xl font-semibold" size="sm">
+                  Continue as O Level <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
               </CardContent>
             </Card>
-            <Card className="border-2 border-border hover:border-primary/50 cursor-pointer transition-all hover:shadow-md" onClick={() => handleSelectLevel("A-Level")}>
+            <Card className="border-2 border-border hover:border-primary/50 cursor-pointer transition-all duration-200 hover:shadow-lg group overflow-hidden relative" onClick={() => handleSelectLevel("A-Level")}>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
               <CardContent className="py-8 px-6 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                   <GraduationCap className="w-7 h-7 text-primary" />
                 </div>
                 <h2 className="text-lg font-bold text-foreground mb-1">A Level Student</h2>
-                <p className="text-sm text-muted-foreground">Enter O-Level & A-Level results → Get university programme recommendations</p>
-                <p className="text-xs text-primary font-semibold mt-2">From $0.50 for 1 university</p>
-                <Button className="mt-5 w-full" size="sm">Continue as A Level</Button>
+                <p className="text-sm text-muted-foreground mb-3">Enter both O & A-Level results for university programme recommendations</p>
+                <Badge className="bg-primary/10 text-primary border-primary/20 font-semibold">From $0.50 per university</Badge>
+                <Button className="mt-5 w-full h-11 rounded-xl font-semibold" size="sm">
+                  Continue as A Level <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
               </CardContent>
             </Card>
           </div>
