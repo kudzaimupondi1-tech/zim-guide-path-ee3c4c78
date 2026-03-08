@@ -820,12 +820,12 @@ const MySubjects = () => {
               </div>
             )}
 
-            {/* Diploma summary */}
+            {/* Additional Qualifications summary */}
             {studentDiplomas.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Award className="w-4 h-4 text-amber-600" />
-                  <h3 className="text-sm font-bold text-foreground">Diploma Qualifications</h3>
+                  <h3 className="text-sm font-bold text-foreground">Additional Qualifications</h3>
                   <Badge variant="secondary" className="text-[10px] ml-auto">{studentDiplomas.length}</Badge>
                 </div>
                 <div className="rounded-xl border border-amber-200 dark:border-amber-800 overflow-hidden bg-card">
@@ -836,7 +836,7 @@ const MySubjects = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-medium text-foreground block truncate">{sd.diplomas?.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{sd.classification}</span>
+                        <span className="text-[10px] text-muted-foreground">{sd.diplomas?.level} · {sd.classification}</span>
                       </div>
                     </div>
                   ))}
