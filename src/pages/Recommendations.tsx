@@ -4,6 +4,7 @@ import {
   GraduationCap, Target, MapPin, Clock, ChevronRight, ArrowLeft, BookOpen,
   Search, Star, ExternalLink, Lightbulb, TrendingUp, X
 } from "lucide-react";
+import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
