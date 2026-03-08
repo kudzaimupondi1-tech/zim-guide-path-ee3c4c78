@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   GraduationCap, Target, MapPin, Clock, ChevronRight, ArrowLeft, BookOpen,
-  Search, Star, ExternalLink, Lightbulb, TrendingUp, X
+  Search, Star, ExternalLink, Lightbulb, TrendingUp, X, Briefcase
 } from "lucide-react";
 import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import type { Tables } from "@/integrations/supabase/types";
 type Program = Tables<"programs"> & {
   universities?: Tables<"universities">;
   program_subjects?: Array<{ subjects?: Tables<"subjects">; is_required?: boolean; minimum_grade?: string | null; }>;
+  program_careers?: Array<{ careers?: Tables<"careers"> }>;
 };
 type StudentSubject = Tables<"student_subjects"> & { subjects?: Tables<"subjects">; };
 type SubjectCombination = { id: string; name: string; description: string | null; subjects: string[]; career_paths: string[] | null; };
@@ -74,7 +75,7 @@ const Recommendations = () => {
 
       const [subjectsData, programsData, universitiesData, combinationsData, favouritesData] = await Promise.all([
         supabase.from("student_subjects").select("*, subjects(*)").eq("user_id", userId),
-        supabase.from("programs").select("*, universities(*), program_subjects(*, subjects(*))").eq("is_active", true).order("name"),
+        supabase.from("programs").select("*, universities(*), program_subjects(*, subjects(*)), program_careers(*, careers(*))").eq("is_active", true).order("name"),
         supabase.from("universities").select("*").eq("is_active", true).order("name"),
         supabase.from("subject_combinations").select("*").eq("is_active", true).eq("level", "A-Level"),
         supabase.from("favourite_programs").select("program_id").eq("user_id", userId),
@@ -418,6 +419,19 @@ const Recommendations = () => {
                       {program.universities?.location && <div className="flex items-center gap-1"><MapPin className="w-4 h-4" />{program.universities.location}</div>}
                       {program.duration_years && <div className="flex items-center gap-1"><Clock className="w-4 h-4" />{program.duration_years} years</div>}
                     </div>
+                    {program.program_careers && program.program_careers.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1"><Briefcase className="w-3.5 h-3.5" /> Career Paths:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {program.program_careers.slice(0, 4).map((pc, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">{pc.careers?.name}</Badge>
+                          ))}
+                          {program.program_careers.length > 4 && (
+                            <Badge variant="outline" className="text-xs">+{program.program_careers.length - 4} more</Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <Button size="sm" className="w-full" onClick={() => setSelectedProgramDetail(program)}>View Details <ChevronRight className="w-4 h-4 ml-2" /></Button>
                   </CardContent>
                 </Card>
@@ -469,6 +483,16 @@ const Recommendations = () => {
                   </div>
                 )}
                 {selectedProgramDetail.entry_requirements && <div><h4 className="text-sm font-semibold mb-1">Entry Requirements</h4><p className="text-sm text-muted-foreground">{selectedProgramDetail.entry_requirements}</p></div>}
+                {selectedProgramDetail.program_careers && selectedProgramDetail.program_careers.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-1"><Briefcase className="w-4 h-4" /> Career Paths</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProgramDetail.program_careers.map((pc: any, i: number) => (
+                        <Badge key={i} variant="secondary">{pc.careers?.name}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1" onClick={() => toggleStar(selectedProgramDetail, selectedProgramDetail.matchData.score)}>
                     <Star className={`w-4 h-4 mr-2 ${starredIds.has(selectedProgramDetail.id) ? "text-yellow-500 fill-yellow-500" : ""}`} />
