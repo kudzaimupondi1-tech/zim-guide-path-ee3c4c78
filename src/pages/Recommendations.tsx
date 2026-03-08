@@ -143,9 +143,15 @@ const Recommendations = () => {
     };
 
     if (structured.length > 0) {
-      let blocksPassed = 0;
-      let totalBlocks = structured.length;
-      let allCompulsoryMet = true;
+      let totalRequirements = 0;
+      let satisfiedRequirements = 0;
+
+      const CLASSIFICATION_ORDER = ["Distinction", "Merit", "Credit", "Pass"];
+      const meetsClassification = (studentClass: string | null, minClass: string | null): boolean => {
+        if (!minClass) return true;
+        if (!studentClass) return false;
+        return CLASSIFICATION_ORDER.indexOf(studentClass) <= CLASSIFICATION_ORDER.indexOf(minClass);
+      };
 
       for (const block of structured) {
         const qLevel = block.qualification_type || "A-Level";
@@ -154,71 +160,62 @@ const Recommendations = () => {
         const compulsorySubjects: string[] = block.compulsory_subjects || [];
         const subjectGroups: any[] = block.subject_groups || [];
 
-        // Handle diploma/certificate/HND/NC/ND blocks by checking studentDiplomas
         const qLevelLower = qLevel.toLowerCase();
         const isDiplomaBlock = qLevelLower.includes("diploma") || qLevelLower.includes("certificate") || qLevelLower.includes("mature") || qLevelLower.includes("hnd") || qLevelLower.includes("national");
-        if (isDiplomaBlock) {
-          let diplomaBlockPassed = true;
-          const CLASSIFICATION_ORDER = ["Distinction", "Merit", "Credit", "Pass"];
-          const meetsClassification = (studentClass: string | null, minClass: string | null): boolean => {
-            if (!minClass) return true;
-            if (!studentClass) return false;
-            return CLASSIFICATION_ORDER.indexOf(studentClass) <= CLASSIFICATION_ORDER.indexOf(minClass);
-          };
 
-          // Check if student has ANY diploma that matches this block's requirements
-          if (studentDiplomas.length === 0) {
-            diplomaBlockPassed = false;
-            details.push(`✗ ${qLevel}: No diploma/certificate submitted`);
-          } else {
-            // Check compulsory diploma subjects if specified
-            if (compulsorySubjects.length > 0) {
-              for (const reqName of compulsorySubjects) {
-                const match = studentDiplomas.find(sd => 
-                  (sd.diplomas?.name || "").toLowerCase().includes(reqName.toLowerCase()) ||
-                  reqName.toLowerCase().includes((sd.diplomas?.name || "").toLowerCase())
-                );
-                if (match && meetsClassification(match.classification, minGrade)) {
-                  details.push(`✓ Diploma ${reqName}: ${match.classification || 'Pass'}`);
-                } else {
-                  diplomaBlockPassed = false;
-                  details.push(`✗ Diploma ${reqName}: not met`);
-                }
-              }
-            } else {
-              // No specific diploma required, just check student has a diploma with min classification
-              const anyMatch = studentDiplomas.some(sd => meetsClassification(sd.classification, minGrade));
-              if (anyMatch) {
-                details.push(`✓ ${qLevel}: Diploma/certificate submitted`);
+        if (isDiplomaBlock) {
+          if (compulsorySubjects.length > 0) {
+            for (const reqName of compulsorySubjects) {
+              totalRequirements++;
+              const match = studentDiplomas.find(sd => 
+                (sd.diplomas?.name || "").toLowerCase().includes(reqName.toLowerCase()) ||
+                reqName.toLowerCase().includes((sd.diplomas?.name || "").toLowerCase())
+              );
+              if (match && meetsClassification(match.classification, minGrade)) {
+                satisfiedRequirements++;
+                details.push(`✓ Diploma ${reqName}: ${match.classification || 'Pass'}`);
               } else {
-                diplomaBlockPassed = false;
-                details.push(`✗ ${qLevel}: Classification not met`);
+                details.push(`✗ Diploma ${reqName}: not met`);
               }
             }
+          } else {
+            totalRequirements++;
+            const anyMatch = studentDiplomas.some(sd => meetsClassification(sd.classification, minGrade));
+            if (anyMatch) {
+              satisfiedRequirements++;
+              details.push(`✓ ${qLevel}: Diploma/certificate submitted`);
+            } else {
+              details.push(`✗ ${qLevel}: Classification not met`);
+            }
           }
-
-          if (!diplomaBlockPassed) allCompulsoryMet = false;
-          if (diplomaBlockPassed) blocksPassed++;
           continue;
         }
 
-        // Standard subject-based block evaluation
-        const validPasses = countValidPasses(qLevel, minGrade);
-        let compulsorySatisfied = true;
-
-        for (const subjName of compulsorySubjects) {
-          const studentMatch = studentSubjects.find(ss => (ss.subjects?.name || "").toLowerCase() === subjName.toLowerCase());
-          if (!studentMatch || !meetsGradeRequirement(studentMatch.grade, minGrade)) {
-            compulsorySatisfied = false;
-            details.push(`✗ Compulsory ${subjName}: not met`);
+        // Standard subject-based block: count each requirement individually
+        if (minPasses > 0) {
+          totalRequirements++;
+          const validPasses = countValidPasses(qLevel, minGrade);
+          if (validPasses >= minPasses) {
+            satisfiedRequirements++;
+            details.push(`✓ ${qLevel}: ${validPasses}/${minPasses} passes`);
           } else {
-            details.push(`✓ Compulsory ${subjName}: ${studentMatch.grade}`);
+            details.push(`✗ ${qLevel}: ${validPasses}/${minPasses} passes`);
           }
         }
-        if (!compulsorySatisfied) allCompulsoryMet = false;
 
-        let allGroupsSatisfied = true;
+        for (const subjName of compulsorySubjects) {
+          totalRequirements++;
+          const studentMatch = studentSubjects.find(ss => (ss.subjects?.name || "").toLowerCase() === subjName.toLowerCase());
+          if (studentMatch && meetsGradeRequirement(studentMatch.grade, minGrade)) {
+            satisfiedRequirements++;
+            details.push(`✓ Compulsory ${subjName}: ${studentMatch.grade}`);
+          } else {
+            details.push(`✗ Compulsory ${subjName}: not met`);
+          }
+        }
+
         for (const group of subjectGroups) {
+          totalRequirements++;
           const groupSubjects: string[] = group.subjects || [];
           const minRequired = group.min_required || 1;
           let groupMatched = 0;
@@ -226,22 +223,17 @@ const Recommendations = () => {
             const studentMatch = studentSubjects.find(ss => (ss.subjects?.name || "").toLowerCase() === subjName.toLowerCase());
             if (studentMatch && meetsGradeRequirement(studentMatch.grade, minGrade)) groupMatched++;
           }
-          if (groupMatched < minRequired) allGroupsSatisfied = false;
+          if (groupMatched >= minRequired) {
+            satisfiedRequirements++;
+            details.push(`✓ Group: ${groupMatched}/${minRequired} met`);
+          } else {
+            details.push(`✗ Group: ${groupMatched}/${minRequired} met`);
+          }
         }
-
-        const passesMinPasses = minPasses > 0 ? validPasses >= minPasses : true;
-        if (passesMinPasses && compulsorySatisfied && allGroupsSatisfied) blocksPassed++;
       }
 
-      const qualifies = conditionLogic === "AND" ? blocksPassed === totalBlocks : blocksPassed > 0;
-
-      // Rule: 100% if ALL conditions met, 50% if compulsory subjects met but some optional/blocks missed
-      let score;
-      if (blocksPassed === totalBlocks) score = 100;
-      else if (allCompulsoryMet && blocksPassed > 0) score = 50;
-      else score = 0; // Does not qualify
-
-      return { score, matched: blocksPassed, total: totalBlocks, details, qualifies: score > 0, hasConditions: true };
+      const score = totalRequirements > 0 ? Math.round((satisfiedRequirements / totalRequirements) * 100) : 0;
+      return { score, matched: satisfiedRequirements, total: totalRequirements, details, qualifies: score > 0, hasConditions: true };
     }
 
     // Legacy logic
@@ -261,15 +253,11 @@ const Recommendations = () => {
       if (sub && meetsGradeRequirement(sub.grade, opt.minimum_grade)) optionalMatched++;
     }
 
-    const qualifies = requiredFailed === 0;
     const totalItems = requiredSubjects.length + optionalSubjects.length;
     const matchedItems = requiredMatched + optionalMatched;
-    let score;
-    if (requiredFailed === 0 && optionalSubjects.length > 0 && optionalMatched < optionalSubjects.length) score = 50;
-    else if (requiredFailed === 0) score = 100;
-    else score = 0; // Does not qualify
+    const score = totalItems > 0 ? Math.round((matchedItems / totalItems) * 100) : 0;
 
-    return { score, matched: requiredMatched + optionalMatched, total: requiredSubjects.length + optionalSubjects.length, details, qualifies, hasConditions: true };
+    return { score, matched: matchedItems, total: totalItems, details, qualifies: score > 0, hasConditions: true };
   };
 
   const getSortedOLevelSubjects = () => studentSubjects.filter(ss => ss.level === "O-Level").sort((a, b) => getGradeIndex(a.grade) - getGradeIndex(b.grade));
