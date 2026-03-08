@@ -486,7 +486,7 @@ const MySubjects = () => {
                   <p className="text-sm text-muted-foreground mb-3">
                     Enter both O & A-Level results for university programme recommendations
                   </p>
-                  <Badge className="bg-primary/10 text-primary border-primary/20 font-semibold">From $0.50 per university</Badge>
+                  
                   <Button className="mt-5 w-full h-11 rounded-xl font-semibold" size="sm">
                     Continue as A Level <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
