@@ -277,6 +277,8 @@ const Dashboard = () => {
       </main>
     </div>
   );
+    </PageTransition>
+  );
 };
 
 export default Dashboard;

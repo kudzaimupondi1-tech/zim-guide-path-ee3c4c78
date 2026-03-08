@@ -480,6 +480,8 @@ const Recommendations = () => {
       </Dialog>
     </div>
   );
+    </PageTransition>
+  );
 };
 
 export default Recommendations;
