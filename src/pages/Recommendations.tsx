@@ -298,6 +298,7 @@ const Recommendations = () => {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto px-4">
