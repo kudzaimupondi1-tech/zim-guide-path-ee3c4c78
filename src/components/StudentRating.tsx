@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
-import { Star } from "lucide-react";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const MAX_STARS = 10;
-
 export const StudentRating = () => {
-  const [currentRating, setCurrentRating] = useState<number>(0);
-  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [currentRating, setCurrentRating] = useState<"up" | "down" | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -19,29 +16,31 @@ export const StudentRating = () => {
     if (!user) return;
     const { data } = await supabase
       .from("system_ratings")
-      .select("star_rating")
+      .select("rating_type")
       .eq("user_id", user.id)
       .maybeSingle();
-    if (data?.star_rating) setCurrentRating(data.star_rating);
+    if (data?.rating_type === "thumbs-up") setCurrentRating("up");
+    else if (data?.rating_type === "thumbs-down") setCurrentRating("down");
   };
 
-  const handleRate = async (stars: number) => {
+  const handleRate = async (type: "up" | "down") => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Please sign in to rate"); return; }
 
+      const ratingType = type === "up" ? "thumbs-up" : "thumbs-down";
       const { error } = await supabase
         .from("system_ratings")
         .upsert({
           user_id: user.id,
-          rating_type: `${stars}-star`,
-          star_rating: stars,
+          rating_type: ratingType,
+          star_rating: type === "up" ? 10 : 1,
         } as any, { onConflict: "user_id" });
 
       if (error) throw error;
-      setCurrentRating(stars);
-      toast.success(stars >= 7 ? "Thanks for the great rating! 🎉" : stars >= 4 ? "Thanks for your feedback!" : "Thanks for your feedback. We'll work to improve!");
+      setCurrentRating(type);
+      toast.success(type === "up" ? "Thanks for the positive feedback! 🎉" : "Thanks for your feedback. We'll work to improve!");
     } catch (error: any) {
       toast.error("Failed to submit rating");
     } finally {
@@ -49,33 +48,30 @@ export const StudentRating = () => {
     }
   };
 
-  const displayRating = hoverRating || currentRating;
-
   return (
-    <div className="flex flex-col items-end gap-1.5">
-      <div className="flex items-center gap-0.5">
-        {Array.from({ length: MAX_STARS }, (_, i) => i + 1).map((star) => (
-          <button
-            key={star}
-            onClick={() => handleRate(star)}
-            onMouseEnter={() => setHoverRating(star)}
-            onMouseLeave={() => setHoverRating(0)}
-            disabled={loading}
-            className="p-0.5 transition-transform hover:scale-110 disabled:opacity-50"
-          >
-            <Star
-              className={`w-5 h-5 transition-colors ${
-                star <= displayRating
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "text-muted-foreground/30"
-              }`}
-            />
-          </button>
-        ))}
-      </div>
-      {currentRating > 0 && (
-        <span className="text-[11px] text-muted-foreground">{currentRating}/10</span>
-      )}
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => handleRate("up")}
+        disabled={loading}
+        className={`p-2 rounded-xl transition-all ${
+          currentRating === "up"
+            ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 scale-110"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        } disabled:opacity-50`}
+      >
+        <ThumbsUp className="w-5 h-5" />
+      </button>
+      <button
+        onClick={() => handleRate("down")}
+        disabled={loading}
+        className={`p-2 rounded-xl transition-all ${
+          currentRating === "down"
+            ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 scale-110"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        } disabled:opacity-50`}
+      >
+        <ThumbsDown className="w-5 h-5" />
+      </button>
     </div>
   );
 };

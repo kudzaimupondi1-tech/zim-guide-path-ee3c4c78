@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  GraduationCap, User, LogOut, Bell, X, Plus, Star, Download, BookOpen, ChevronRight, Heart
+  GraduationCap, User, LogOut, Bell, X, Star, BookOpen, ChevronRight, Heart, MessageSquare
 } from "lucide-react";
-import { StudentQueryForm } from "@/components/StudentQueryForm";
 import { PageTransition } from "@/components/PageTransition";
 import { StudentRating } from "@/components/StudentRating";
+import { StudentQueryChat } from "@/components/StudentQueryChat";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -39,6 +39,8 @@ const Dashboard = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [favourites, setFavourites] = useState<FavouriteProgram[]>([]);
+  const [showChat, setShowChat] = useState(false);
+  const [unrespondedQueries, setUnrespondedQueries] = useState(0);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -55,20 +57,65 @@ const Dashboard = () => {
   const fetchUserData = async (userId: string) => {
     try {
       supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("user_id", userId).then();
-      const [profileRes, subjectCountRes, notificationsRes, favouritesRes] = await Promise.all([
+
+      // Sync announcements to notifications
+      await syncAnnouncements(userId);
+
+      const [profileRes, subjectCountRes, notificationsRes, favouritesRes, queriesRes] = await Promise.all([
         supabase.from("profiles").select("full_name").eq("user_id", userId).single(),
         supabase.from("student_subjects").select("*", { count: "exact", head: true }).eq("user_id", userId),
-        supabase.from("student_notifications").select("*").eq("user_id", userId).eq("is_read", false).order("created_at", { ascending: false }).limit(10),
+        supabase.from("student_notifications").select("*").eq("user_id", userId).eq("is_read", false).order("created_at", { ascending: false }).limit(20),
         supabase.from("favourite_programs").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("student_queries").select("*", { count: "exact", head: true }).eq("user_id", userId).eq("status", "responded"),
       ]);
       setProfile(profileRes.data);
       setSubjectCount(subjectCountRes.count || 0);
       setNotifications(notificationsRes.data || []);
       setFavourites((favouritesRes.data as any[]) || []);
+      // Count responded but potentially unread queries
+      setUnrespondedQueries(queriesRes.count || 0);
     } catch (error) {
       console.error("Error fetching user data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncAnnouncements = async (userId: string) => {
+    try {
+      // Get published announcements
+      const { data: announcements } = await supabase
+        .from("announcements")
+        .select("id, title, content, published_at")
+        .eq("is_published", true);
+
+      if (!announcements || announcements.length === 0) return;
+
+      // Get existing notification titles for this user to avoid duplicates
+      const { data: existingNotifs } = await supabase
+        .from("student_notifications")
+        .select("title")
+        .eq("user_id", userId)
+        .eq("notification_type", "announcement");
+
+      const existingTitles = new Set((existingNotifs || []).map(n => n.title));
+
+      // Insert announcements that don't exist as notifications yet
+      const newNotifs = announcements
+        .filter(a => !existingTitles.has(`📢 ${a.title}`))
+        .map(a => ({
+          user_id: userId,
+          title: `📢 ${a.title}`,
+          message: a.content,
+          notification_type: "announcement",
+          is_read: false,
+        }));
+
+      if (newNotifs.length > 0) {
+        await supabase.from("student_notifications").insert(newNotifs as any);
+      }
+    } catch (error) {
+      console.error("Error syncing announcements:", error);
     }
   };
 
@@ -124,11 +171,21 @@ const Dashboard = () => {
               </div>
             </Link>
             <div className="flex items-center gap-1.5">
+              {/* Query Chat Icon */}
+              <div className="relative">
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setShowChat(!showChat)}>
+                  <MessageSquare className="w-5 h-5" />
+                  {unrespondedQueries > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-green-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">{unrespondedQueries}</span>
+                  )}
+                </Button>
+              </div>
+              {/* Notifications */}
               <div className="relative">
                 <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setShowNotifications(!showNotifications)}>
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">{unreadCount}</span>
+                    <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">{unreadCount > 99 ? "99+" : unreadCount}</span>
                   )}
                 </Button>
                 {showNotifications && (
@@ -222,7 +279,7 @@ const Dashboard = () => {
               <h3 className="font-bold text-lg text-foreground mb-2">Favoured Programs</h3>
               <p className="text-sm text-muted-foreground flex-1 mb-5 leading-relaxed">
                 {favourites.length === 0
-                  ? "Star up to 5 programs from your recommendations to save them here."
+                  ? "Star up to 10 programs from your recommendations to save them here."
                   : `You have ${favourites.length} saved program${favourites.length > 1 ? "s" : ""}. View and download as PDF.`
                 }
               </p>
@@ -265,11 +322,8 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* Student Query */}
-        {user && <StudentQueryForm userId={user.id} />}
-
         {/* Rating */}
-        <Card className="border border-border shadow-sm rounded-2xl mt-6">
+        <Card className="border border-border shadow-sm rounded-2xl">
           <CardContent className="py-5 px-6 flex items-center justify-between gap-4">
             <div>
               <h3 className="font-bold text-foreground text-sm">How do you find EduGuide?</h3>
@@ -279,6 +333,9 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </main>
+
+      {/* Chat Widget */}
+      {user && <StudentQueryChat userId={user.id} open={showChat} onClose={() => setShowChat(false)} />}
     </div>
   );
     </PageTransition>
