@@ -75,7 +75,7 @@ const App = () => (
           <Route path="/admin/queries" element={<AdminQueries />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
-        
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
