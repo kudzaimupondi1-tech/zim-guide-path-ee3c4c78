@@ -354,6 +354,13 @@ export default function AdminUsers() {
                                 </Button>
                               </div>
                             </TableCell>
+                            <TableCell>
+                              {(profile as any).recommendation_viewed_at ? (
+                                <Badge variant="default" className="text-xs">Viewed</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">Not viewed</Badge>
+                              )}
+                            </TableCell>
                             <TableCell>{formatDate(profile.created_at)}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
