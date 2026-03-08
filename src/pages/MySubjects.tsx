@@ -503,67 +503,125 @@ const MySubjects = () => {
 
   // ════════════════════ STEP: Add Subjects ════════════════════
   if (step === "add") {
+    const totalRequired = studentLevel === "A-Level" ? 2 : 1;
+    const sectionsComplete = studentLevel === "A-Level" 
+      ? (oLevelAdded.length > 0 ? 1 : 0) + (aLevelAdded.length > 0 ? 1 : 0)
+      : (oLevelAdded.length > 0 ? 1 : 0);
+
     return (
       <PageTransition>
         <div className="min-h-screen bg-secondary/30">
           {renderHeader(
-            studentLevel === "A-Level" ? "Add Your Subjects" : "Add O-Level Subjects",
-            studentLevel === "O-Level" ? "Step 1 of 3 — Enter your results" : "Step 1 of 4 — Enter your results",
+            studentLevel === "A-Level" ? "Enter Your Results" : "Enter O-Level Results",
+            studentLevel === "O-Level" ? "Step 1 of 3" : "Step 1 of 4",
             () => setStep("level")
           )}
-          <main className="container mx-auto px-4 py-6 max-w-3xl space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardContent className="p-4 sm:p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Add your results quickly</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Search a subject, pick grade, then click Add.</p>
+          <main className="container mx-auto px-4 py-6 max-w-2xl space-y-5">
+            {/* Progress Summary */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-base font-bold text-foreground">Subject Entry</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Search, select grade, and add each subject</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm font-bold text-primary">{sessionSubjects.length}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground">{sessionSubjects.length}</span> subject{sessionSubjects.length !== 1 ? "s" : ""} added
+                  <span className="text-[11px] text-muted-foreground">added</span>
+                </div>
+              </div>
+
+              {studentLevel === "A-Level" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className={`rounded-xl p-3 border transition-colors ${oLevelAdded.length > 0 ? "border-primary/30 bg-primary/5" : "border-border bg-muted/30"}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <BookOpen className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-xs font-semibold text-foreground">O-Level</span>
+                    </div>
+                    <p className="text-lg font-bold text-foreground">{oLevelAdded.length}</p>
+                    <p className="text-[10px] text-muted-foreground">subjects entered</p>
+                  </div>
+                  <div className={`rounded-xl p-3 border transition-colors ${aLevelAdded.length > 0 ? "border-primary/30 bg-primary/5" : "border-border bg-muted/30"}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-xs font-semibold text-foreground">A-Level</span>
+                    </div>
+                    <p className="text-lg font-bold text-foreground">{aLevelAdded.length}</p>
+                    <p className="text-[10px] text-muted-foreground">subjects entered</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+            </div>
 
+            {/* Info Banner */}
             {studentLevel === "A-Level" && (
-              <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/15 flex items-start gap-2.5">
-                <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-primary/5 border border-primary/15">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                </div>
                 <div>
-                  <p className="text-xs font-medium text-foreground">Both levels required</p>
+                  <p className="text-xs font-semibold text-foreground">Both O-Level & A-Level results required</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Enter your O-Level and A-Level results below for accurate university programme matching.
+                    This ensures accurate university programme matching based on your full academic profile.
                   </p>
                 </div>
               </div>
             )}
 
+            {/* O-Level Form */}
             {renderSubjectForm("O-Level")}
 
+            {/* A-Level Form */}
             {studentLevel === "A-Level" && (
               <>
-                <div className="h-px bg-border" />
+                <div className="flex items-center gap-3 my-1">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">A-Level Section</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
                 {renderSubjectForm("A-Level")}
               </>
             )}
 
-            <div className="sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border -mx-4 px-4 py-3 mt-6">
-              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 max-w-3xl mx-auto">
-                <div className="text-sm text-muted-foreground text-center sm:text-left">
-                  <span className="font-semibold text-foreground">{sessionSubjects.length}</span> subject{sessionSubjects.length !== 1 ? "s" : ""} added
-                  {studentLevel === "A-Level" && (
-                    <span className="text-[11px] ml-2">
-                      ({oLevelAdded.length} O-Level, {aLevelAdded.length} A-Level)
+            {/* Spacer for sticky bar */}
+            <div className="h-16" />
+
+            {/* Bottom Action Bar */}
+            <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-40">
+              <div className="container mx-auto px-4 max-w-2xl">
+                <div className="flex items-center justify-between gap-3 h-16">
+                  <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-2">
+                      {studentLevel === "A-Level" ? (
+                        <>
+                          <Badge variant={oLevelAdded.length > 0 ? "default" : "secondary"} className="text-[10px] gap-1">
+                            {oLevelAdded.length > 0 && <Check className="w-3 h-3" />}
+                            O-Level: {oLevelAdded.length}
+                          </Badge>
+                          <Badge variant={aLevelAdded.length > 0 ? "default" : "secondary"} className="text-[10px] gap-1">
+                            {aLevelAdded.length > 0 && <Check className="w-3 h-3" />}
+                            A-Level: {aLevelAdded.length}
+                          </Badge>
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          <span className="font-semibold text-foreground">{sessionSubjects.length}</span> subject{sessionSubjects.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
+                    <span className="sm:hidden text-sm text-muted-foreground">
+                      <span className="font-semibold text-foreground">{sessionSubjects.length}</span> added
                     </span>
-                  )}
+                  </div>
+                  <Button
+                    onClick={() => setStep("confirm")}
+                    disabled={sessionSubjects.length === 0 || (studentLevel === "A-Level" && (oLevelAdded.length === 0 || aLevelAdded.length === 0))}
+                    className="h-10 px-6 rounded-xl font-semibold shadow-sm"
+                  >
+                    Review & Continue <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => setStep("confirm")}
-                  disabled={sessionSubjects.length === 0}
-                  className="h-10 px-6 rounded-xl font-semibold"
-                >
-                  Review & Continue <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
               </div>
             </div>
           </main>
