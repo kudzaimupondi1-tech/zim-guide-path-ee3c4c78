@@ -302,7 +302,40 @@ const Recommendations = () => {
   };
   const allDisplayPrograms = getFilteredByPayment();
   const displayPrograms = allDisplayPrograms.filter(p => p.entry_type === 'normal' || !p.entry_type);
-  const diplomaPrograms = allDisplayPrograms.filter(p => p.entry_type && p.entry_type !== 'normal');
+
+  // Classification hierarchy for diploma matching
+  const CLASSIFICATION_ORDER = ["Distinction", "Merit", "Credit", "Pass"];
+  const meetsClassification = (studentClass: string | null, minClass: string | null): boolean => {
+    if (!minClass) return true;
+    if (!studentClass) return false;
+    return CLASSIFICATION_ORDER.indexOf(studentClass) <= CLASSIFICATION_ORDER.indexOf(minClass);
+  };
+
+  // Diploma programs: show if student has a matching diploma OR if they qualify by A-Level subjects
+  const diplomaPrograms = programs
+    .filter(p => p.entry_type && p.entry_type !== 'normal')
+    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.universities?.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+    .map(p => {
+      const matchData = calculateMatchScore(p);
+      // Check if student's diplomas match any of the program's accepted diplomas
+      const programDiplomas = p.program_diplomas || [];
+      let diplomaMatch = false;
+      let matchedDiplomaName = "";
+      for (const pd of programDiplomas) {
+        const studentHas = studentDiplomas.find(sd => sd.diploma_id === pd.diplomas?.id);
+        if (studentHas && meetsClassification(studentHas.classification, pd.minimum_classification)) {
+          diplomaMatch = true;
+          matchedDiplomaName = pd.diplomas?.name || "";
+          break;
+        }
+      }
+      // Qualify if diploma matches OR A-Level subjects match
+      const qualifies = diplomaMatch || matchData.qualifies;
+      const score = diplomaMatch ? 100 : matchData.score;
+      return { ...p, matchData: { ...matchData, qualifies, score, diplomaMatch, matchedDiplomaName } };
+    })
+    .filter(p => p.matchData.qualifies)
+    .sort((a, b) => b.matchData.score - a.matchData.score);
 
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
