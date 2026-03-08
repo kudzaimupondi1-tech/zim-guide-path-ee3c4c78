@@ -30,7 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Loader2, BookOpen, Upload, Download, FileSpreadsheet, FileText, Search, AlertCircle, XCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, BookOpen, Upload, Download, FileSpreadsheet, FileText, Search, AlertCircle, XCircle, GraduationCap } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
