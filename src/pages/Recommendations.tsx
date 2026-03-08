@@ -232,7 +232,10 @@ const Recommendations = () => {
         }
       }
 
-      const score = totalRequirements > 0 ? Math.round((satisfiedRequirements / totalRequirements) * 100) : 0;
+      const score = totalRequirements > 0 
+        ? (satisfiedRequirements === totalRequirements ? 100 : 
+           (satisfiedRequirements >= Math.ceil(totalRequirements / 2) ? 50 : 0)) 
+        : 0;
       return { score, matched: satisfiedRequirements, total: totalRequirements, details, qualifies: score > 0, hasConditions: true };
     }
 
