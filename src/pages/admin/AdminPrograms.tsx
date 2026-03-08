@@ -102,6 +102,7 @@ export default function AdminPrograms() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [universities, setUniversities] = useState<University[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [diplomas, setDiplomas] = useState<Diploma[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubjectsDialogOpen, setIsSubjectsDialogOpen] = useState(false);
@@ -123,6 +124,9 @@ export default function AdminPrograms() {
   const [tempSelectedSubjects, setTempSelectedSubjects] = useState<string[]>([]);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [minRequiredFromGroup, setMinRequiredFromGroup] = useState(1);
+  const [isDiplomaDialogOpen, setIsDiplomaDialogOpen] = useState(false);
+  const [selectedProgramDiplomas, setSelectedProgramDiplomas] = useState<Array<{ diploma_id: string; is_required: boolean; minimum_classification: string | null }>>([]);
+  const [diplomaSearchQuery, setDiplomaSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
