@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, CreditCard, RefreshCw, Loader2, DollarSign, Users, Eye, EyeOff, FileSearch, ArrowDownUp, CheckCircle2, XCircle, AlertCircle, Clock } from "lucide-react";
+import { Search, CreditCard, RefreshCw, Loader2, DollarSign, Users, Eye, EyeOff, FileSearch, ArrowDownUp, CheckCircle2, XCircle, AlertCircle, Clock, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 
