@@ -21,6 +21,7 @@ type Program = Tables<"programs"> & {
   universities?: Tables<"universities">;
   program_subjects?: Array<{ subjects?: Tables<"subjects">; is_required?: boolean; minimum_grade?: string | null; }>;
   program_careers?: Array<{ careers?: Tables<"careers"> }>;
+  program_diplomas?: Array<{ diplomas?: Tables<"diplomas">; is_required?: boolean; minimum_classification?: string | null; }>;
 };
 type StudentSubject = Tables<"student_subjects"> & { subjects?: Tables<"subjects">; };
 type SubjectCombination = { id: string; name: string; description: string | null; subjects: string[]; career_paths: string[] | null; };
@@ -75,7 +76,7 @@ const Recommendations = () => {
 
       const [subjectsData, programsData, universitiesData, combinationsData, favouritesData] = await Promise.all([
         supabase.from("student_subjects").select("*, subjects(*)").eq("user_id", userId),
-        supabase.from("programs").select("*, universities(*), program_subjects(*, subjects(*)), program_careers(*, careers(*))").eq("is_active", true).order("name"),
+        supabase.from("programs").select("*, universities(*), program_subjects(*, subjects(*)), program_careers(*, careers(*)), program_diplomas(*, diplomas(*))").eq("is_active", true).order("name"),
         supabase.from("universities").select("*").eq("is_active", true).order("name"),
         supabase.from("subject_combinations").select("*").eq("is_active", true).eq("level", "A-Level"),
         supabase.from("favourite_programs").select("program_id").eq("user_id", userId),
@@ -546,6 +547,25 @@ const Recommendations = () => {
                   </div>
                 )}
                 {selectedProgramDetail.entry_requirements && <div><h4 className="text-sm font-semibold mb-1">Entry Requirements</h4><p className="text-sm text-muted-foreground">{selectedProgramDetail.entry_requirements}</p></div>}
+                {selectedProgramDetail.program_diplomas && selectedProgramDetail.program_diplomas.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-1"><GraduationCap className="w-4 h-4" /> Accepted Diplomas</h4>
+                    <div className="space-y-2">
+                      {selectedProgramDetail.program_diplomas.map((pd: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground">{pd.diplomas?.name}</p>
+                            {pd.diplomas?.institution && <p className="text-xs text-muted-foreground">{pd.diplomas.institution}</p>}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {pd.minimum_classification && <Badge variant="outline" className="text-xs">Min: {pd.minimum_classification}</Badge>}
+                            <Badge variant={pd.is_required ? "default" : "secondary"} className="text-xs">{pd.is_required ? "Required" : "Optional"}</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {selectedProgramDetail.program_careers && selectedProgramDetail.program_careers.length > 0 && (
                   <div>
                     <h4 className="text-sm font-semibold mb-2 flex items-center gap-1"><Briefcase className="w-4 h-4" /> Career Paths</h4>

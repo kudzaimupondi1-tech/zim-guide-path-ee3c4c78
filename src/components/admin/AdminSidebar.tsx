@@ -53,6 +53,7 @@ const dataMenuItems = [
   { title: "Combinations", url: "/admin/combinations", icon: Layers, countKey: "combinations" },
   { title: "Grading", url: "/admin/grading", icon: Hash, countKey: "grading" },
   { title: "Careers", url: "/admin/careers", icon: Briefcase, countKey: "careers" },
+  { title: "Diplomas", url: "/admin/diplomas", icon: GraduationCap, countKey: null },
 ];
 
 const systemMenuItems = [
