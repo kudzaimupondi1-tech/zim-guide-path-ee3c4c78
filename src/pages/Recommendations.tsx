@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   GraduationCap, Target, MapPin, Clock, ChevronRight, ArrowLeft, BookOpen,
-  Search, Star, ExternalLink, Lightbulb, TrendingUp, X
+  Search, Star, ExternalLink, Lightbulb, TrendingUp, X, Briefcase
 } from "lucide-react";
 import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
