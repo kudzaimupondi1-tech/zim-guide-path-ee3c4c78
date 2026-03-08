@@ -86,6 +86,7 @@ const MySubjects = () => {
   const [selectedDiplomaId, setSelectedDiplomaId] = useState("");
   const [selectedClassification, setSelectedClassification] = useState("Pass");
   const [diplomaSearch, setDiplomaSearch] = useState("");
+  const [selectedQualificationType, setSelectedQualificationType] = useState("");
 
   const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [selectedUniversities, setSelectedUniversities] = useState<string[]>([]);
@@ -597,49 +598,83 @@ const MySubjects = () => {
                         <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
                           <Award className="w-4 h-4" />
                         </div>
-                        <h3 className="text-sm font-semibold text-foreground">Diploma Qualifications <span className="text-xs font-normal text-muted-foreground">(optional)</span></h3>
+                        <h3 className="text-sm font-semibold text-foreground">Additional Qualifications <span className="text-xs font-normal text-muted-foreground">(optional)</span></h3>
                         {studentDiplomas.length > 0 && (
                           <Badge variant="outline" className="text-[10px] ml-auto">{studentDiplomas.length} added</Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">If you hold a diploma, add it here for additional program matches.</p>
+                      <p className="text-xs text-muted-foreground">If you hold any of these qualifications, select the type and add it for additional program matches.</p>
 
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="flex-1 relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                          <Input value={diplomaSearch} onChange={e => setDiplomaSearch(e.target.value)} placeholder="Search diplomas..." className="h-10 pl-9 text-sm" />
-                        </div>
-                      </div>
+                      {/* Qualification Type Selector */}
+                      <Select value={selectedQualificationType} onValueChange={(val) => { setSelectedQualificationType(val); setSelectedDiplomaId(""); setDiplomaSearch(""); }}>
+                        <SelectTrigger className="h-10 text-sm bg-background">
+                          <SelectValue placeholder="Select qualification type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Diploma">Diploma</SelectItem>
+                          <SelectItem value="Higher National Diploma">Higher National Diploma</SelectItem>
+                          <SelectItem value="National Certificate">National Certificate</SelectItem>
+                          <SelectItem value="National Diploma">National Diploma</SelectItem>
+                          <SelectItem value="Certificate">Certificate</SelectItem>
+                        </SelectContent>
+                      </Select>
 
-                      <div className="flex gap-2">
-                        <Select value={selectedDiplomaId} onValueChange={setSelectedDiplomaId}>
-                          <SelectTrigger className="h-10 text-sm bg-background flex-[2]">
-                            <SelectValue placeholder="Select diploma" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableDiplomas.filter(d =>
-                              d.name.toLowerCase().includes(diplomaSearch.toLowerCase()) ||
-                              (d.field || "").toLowerCase().includes(diplomaSearch.toLowerCase())
-                            ).filter(d => !studentDiplomas.some(sd => sd.diploma_id === d.id)).map(d => (
-                              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Select value={selectedClassification} onValueChange={setSelectedClassification}>
-                          <SelectTrigger className="h-10 text-sm bg-background w-28">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Distinction">Distinction</SelectItem>
-                            <SelectItem value="Merit">Merit</SelectItem>
-                            <SelectItem value="Credit">Credit</SelectItem>
-                            <SelectItem value="Pass">Pass</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button onClick={handleAddDiploma} disabled={!selectedDiplomaId || saving} size="icon" className="h-10 w-10 shrink-0">
-                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                        </Button>
-                      </div>
+                      {/* Show diploma selection only after type is chosen */}
+                      {selectedQualificationType && (
+                        <>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="flex-1 relative">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                              <Input value={diplomaSearch} onChange={e => setDiplomaSearch(e.target.value)} placeholder={`Search ${selectedQualificationType}s...`} className="h-10 pl-9 text-sm" />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Select value={selectedDiplomaId} onValueChange={setSelectedDiplomaId}>
+                              <SelectTrigger className="h-10 text-sm bg-background flex-[2]">
+                                <SelectValue placeholder={`Select ${selectedQualificationType}`} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableDiplomas
+                                  .filter(d => d.level === selectedQualificationType)
+                                  .filter(d =>
+                                    d.name.toLowerCase().includes(diplomaSearch.toLowerCase()) ||
+                                    (d.field || "").toLowerCase().includes(diplomaSearch.toLowerCase())
+                                  )
+                                  .filter(d => !studentDiplomas.some(sd => sd.diploma_id === d.id))
+                                  .length === 0 ? (
+                                  <div className="p-3 text-xs text-muted-foreground text-center">No {selectedQualificationType}s found</div>
+                                ) : (
+                                  availableDiplomas
+                                    .filter(d => d.level === selectedQualificationType)
+                                    .filter(d =>
+                                      d.name.toLowerCase().includes(diplomaSearch.toLowerCase()) ||
+                                      (d.field || "").toLowerCase().includes(diplomaSearch.toLowerCase())
+                                    )
+                                    .filter(d => !studentDiplomas.some(sd => sd.diploma_id === d.id))
+                                    .map(d => (
+                                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                    ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <Select value={selectedClassification} onValueChange={setSelectedClassification}>
+                              <SelectTrigger className="h-10 text-sm bg-background w-28">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Distinction">Distinction</SelectItem>
+                                <SelectItem value="Merit">Merit</SelectItem>
+                                <SelectItem value="Credit">Credit</SelectItem>
+                                <SelectItem value="Pass">Pass</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button onClick={handleAddDiploma} disabled={!selectedDiplomaId || saving} size="icon" className="h-10 w-10 shrink-0">
+                              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </>
+                      )}
 
                       {studentDiplomas.length > 0 && (
                         <div className="space-y-1.5">
@@ -650,7 +685,7 @@ const MySubjects = () => {
                               </span>
                               <div className="flex-1 min-w-0">
                                 <span className="text-sm text-foreground truncate block">{sd.diplomas?.name || "Unknown"}</span>
-                                <span className="text-[10px] text-muted-foreground">{sd.classification}</span>
+                                <span className="text-[10px] text-muted-foreground">{sd.diplomas?.level} · {sd.classification}</span>
                               </div>
                               <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={() => handleRemoveDiploma(sd)}>
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -785,12 +820,12 @@ const MySubjects = () => {
               </div>
             )}
 
-            {/* Diploma summary */}
+            {/* Additional Qualifications summary */}
             {studentDiplomas.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Award className="w-4 h-4 text-amber-600" />
-                  <h3 className="text-sm font-bold text-foreground">Diploma Qualifications</h3>
+                  <h3 className="text-sm font-bold text-foreground">Additional Qualifications</h3>
                   <Badge variant="secondary" className="text-[10px] ml-auto">{studentDiplomas.length}</Badge>
                 </div>
                 <div className="rounded-xl border border-amber-200 dark:border-amber-800 overflow-hidden bg-card">
@@ -801,7 +836,7 @@ const MySubjects = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-medium text-foreground block truncate">{sd.diplomas?.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{sd.classification}</span>
+                        <span className="text-[10px] text-muted-foreground">{sd.diplomas?.level} · {sd.classification}</span>
                       </div>
                     </div>
                   ))}
