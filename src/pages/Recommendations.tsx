@@ -154,8 +154,10 @@ const Recommendations = () => {
         const compulsorySubjects: string[] = block.compulsory_subjects || [];
         const subjectGroups: any[] = block.subject_groups || [];
 
-        // Handle diploma/certificate blocks by checking studentDiplomas
-        if (qLevel.toLowerCase().includes("diploma") || qLevel.toLowerCase().includes("certificate") || qLevel.toLowerCase().includes("mature")) {
+        // Handle diploma/certificate/HND/NC/ND blocks by checking studentDiplomas
+        const qLevelLower = qLevel.toLowerCase();
+        const isDiplomaBlock = qLevelLower.includes("diploma") || qLevelLower.includes("certificate") || qLevelLower.includes("mature") || qLevelLower.includes("hnd") || qLevelLower.includes("national");
+        if (isDiplomaBlock) {
           let diplomaBlockPassed = true;
           const CLASSIFICATION_ORDER = ["Distinction", "Merit", "Credit", "Pass"];
           const meetsClassification = (studentClass: string | null, minClass: string | null): boolean => {
