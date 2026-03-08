@@ -514,6 +514,11 @@ const Recommendations = () => {
           {selectedProgramDetail && (
             <>
               <DialogHeader>
+                <div className="flex items-center gap-2 mb-1">
+                  {selectedProgramDetail.entry_type && selectedProgramDetail.entry_type !== 'normal' && (
+                    <Badge className="bg-amber-500 text-white capitalize">{selectedProgramDetail.entry_type} Entry</Badge>
+                  )}
+                </div>
                 <DialogTitle className="text-xl">{selectedProgramDetail.name}</DialogTitle>
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1"><GraduationCap className="w-4 h-4" />{selectedProgramDetail.universities?.name}</p>
               </DialogHeader>
