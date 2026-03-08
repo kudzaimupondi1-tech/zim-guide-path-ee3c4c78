@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   GraduationCap, User, LogOut, Bell, X, Plus, Star, Download, BookOpen, ChevronRight, Heart
 } from "lucide-react";
+import { PageTransition } from "@/components/PageTransition";
 import { StudentRating } from "@/components/StudentRating";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -106,6 +107,7 @@ const Dashboard = () => {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-secondary/30">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
@@ -274,6 +276,8 @@ const Dashboard = () => {
         </Card>
       </main>
     </div>
+  );
+    </PageTransition>
   );
 };
 

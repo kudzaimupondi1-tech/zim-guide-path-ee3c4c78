@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   GraduationCap, Plus, BookOpen, ArrowLeft, Loader2, AlertCircle, CheckCircle2,
   ChevronRight, Phone, CreditCard, Building2
+
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PageTransition } from "@/components/PageTransition";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -338,6 +340,7 @@ const MySubjects = () => {
   // STEP: Level Selection
   if (step === "level") {
     return (
+      <PageTransition>
       <div className="min-h-screen bg-secondary/30">
         <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
           <div className="container mx-auto px-4">
@@ -392,12 +395,14 @@ const MySubjects = () => {
           </div>
         </main>
       </div>
+      </PageTransition>
     );
   }
 
   // STEP: Add Subjects
   if (step === "add") {
     return (
+      <PageTransition>
       <div className="min-h-screen bg-secondary/30">
         <header className="sticky top-0 z-50 bg-card border-b border-border">
           <div className="container mx-auto px-4">
@@ -453,6 +458,7 @@ const MySubjects = () => {
           </div>
         </main>
       </div>
+      </PageTransition>
     );
   }
 
@@ -462,6 +468,7 @@ const MySubjects = () => {
     const aLevel = sessionSubjects.filter(s => s.level === "A-Level");
 
     return (
+      <PageTransition>
       <div className="min-h-screen bg-secondary/30">
         <header className="sticky top-0 z-50 bg-card border-b border-border">
           <div className="container mx-auto px-4">
@@ -569,12 +576,14 @@ const MySubjects = () => {
           </div>
         </main>
       </div>
+      </PageTransition>
     );
   }
 
   // STEP: University Selection + Payment (A-Level only)
   if (step === "university" || step === "processing") {
     return (
+      <PageTransition>
       <div className="min-h-screen bg-secondary/30">
         <header className="sticky top-0 z-50 bg-card border-b border-border">
           <div className="container mx-auto px-4">
@@ -728,6 +737,7 @@ const MySubjects = () => {
           )}
         </main>
       </div>
+    </PageTransition>
     );
   }
 

@@ -4,6 +4,7 @@ import {
   GraduationCap, Target, MapPin, Clock, ChevronRight, ArrowLeft, BookOpen,
   Search, Star, ExternalLink, Lightbulb, TrendingUp, X
 } from "lucide-react";
+import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -297,6 +298,7 @@ const Recommendations = () => {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto px-4">
@@ -477,6 +479,8 @@ const Recommendations = () => {
         </DialogContent>
       </Dialog>
     </div>
+  );
+    </PageTransition>
   );
 };
 
