@@ -373,25 +373,27 @@ const MySubjects = () => {
             </SelectContent>
           </Select>
 
-          <Select value={grade} onValueChange={setGrade}>
-            <SelectTrigger className="h-10 text-sm bg-background">
-              <SelectValue placeholder="Grade" />
-            </SelectTrigger>
-            <SelectContent>
-              {grades.map((g) => (
-                <SelectItem key={g} value={g}>{g}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={grade} onValueChange={setGrade}>
+              <SelectTrigger className="h-10 text-sm bg-background flex-1">
+                <SelectValue placeholder="Grade" />
+              </SelectTrigger>
+              <SelectContent>
+                {grades.map((g) => (
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Button
-            onClick={() => handleAddSubject(level)}
-            disabled={!subjectId || !grade || saving}
-            size="sm"
-            className="h-10 px-5 shrink-0"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Add</>}
-          </Button>
+            <Button
+              onClick={() => handleAddSubject(level)}
+              disabled={!subjectId || !grade || saving}
+              size="sm"
+              className="h-10 px-5 shrink-0"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Add</>}
+            </Button>
+          </div>
         </div>
 
         {added.length > 0 && (
