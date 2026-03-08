@@ -77,6 +77,8 @@ const MySubjects = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [uniSearch, setUniSearch] = useState("");
+  const [oLevelSearch, setOLevelSearch] = useState("");
+  const [aLevelSearch, setALevelSearch] = useState("");
 
   const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [selectedUniversities, setSelectedUniversities] = useState<string[]>([]);
@@ -323,32 +325,46 @@ const MySubjects = () => {
     const setSubjectId = level === "O-Level" ? setOLevelSubjectId : setALevelSubjectId;
     const setGrade = level === "O-Level" ? setOLevelGrade : setALevelGrade;
     const subjectsList = level === "O-Level" ? oLevelAvailable : aLevelAvailable;
+    const searchValue = level === "O-Level" ? oLevelSearch : aLevelSearch;
+    const setSearchValue = level === "O-Level" ? setOLevelSearch : setALevelSearch;
+    const filteredSubjects = subjectsList.filter((subject) => {
+      const text = `${subject.name} ${subject.category || ""}`.toLowerCase();
+      return text.includes(searchValue.toLowerCase());
+    });
     const added = sessionSubjects.filter(s => s.level === level);
     const icon = level === "O-Level" ? <BookOpen className="w-4 h-4" /> : <GraduationCap className="w-4 h-4" />;
 
     return (
-      <div className="space-y-4">
-        {/* Section title */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            {icon}
+      <div className="space-y-4 rounded-2xl border border-border bg-card p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              {icon}
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">{level} Subjects</h3>
+              <p className="text-[11px] text-muted-foreground">{added.length} subject{added.length !== 1 ? "s" : ""} added</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-foreground">{level} Subjects</h3>
-            <p className="text-[11px] text-muted-foreground">{added.length} subject{added.length !== 1 ? "s" : ""} added</p>
-          </div>
+          <Badge variant="secondary" className="text-[10px]">{filteredSubjects.length} available</Badge>
         </div>
 
-        {/* Input row */}
-        <div className="flex flex-col sm:flex-row gap-2">
+        <Input
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          placeholder={`Search ${level} subjects...`}
+          className="h-10"
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-2">
           <Select value={subjectId} onValueChange={setSubjectId}>
-            <SelectTrigger className="h-10 text-sm flex-1 bg-background">
+            <SelectTrigger className="h-10 text-sm bg-background">
               <SelectValue placeholder="Choose a subject..." />
             </SelectTrigger>
             <SelectContent>
-              {subjectsList.length === 0 ? (
-                <div className="p-3 text-xs text-muted-foreground text-center">No more subjects available</div>
-              ) : subjectsList.map((subject) => (
+              {filteredSubjects.length === 0 ? (
+                <div className="p-3 text-xs text-muted-foreground text-center">No subjects match your search</div>
+              ) : filteredSubjects.map((subject) => (
                 <SelectItem key={subject.id} value={subject.id}>
                   <span>{subject.name}</span>
                   {subject.category && <span className="text-muted-foreground ml-1">· {subject.category}</span>}
@@ -356,8 +372,9 @@ const MySubjects = () => {
               ))}
             </SelectContent>
           </Select>
+
           <Select value={grade} onValueChange={setGrade}>
-            <SelectTrigger className="h-10 text-sm w-full sm:w-24 bg-background">
+            <SelectTrigger className="h-10 text-sm bg-background">
               <SelectValue placeholder="Grade" />
             </SelectTrigger>
             <SelectContent>
@@ -366,6 +383,7 @@ const MySubjects = () => {
               ))}
             </SelectContent>
           </Select>
+
           <Button
             onClick={() => handleAddSubject(level)}
             disabled={!subjectId || !grade || saving}
@@ -376,7 +394,6 @@ const MySubjects = () => {
           </Button>
         </div>
 
-        {/* Added subjects list */}
         {added.length > 0 && (
           <div className="rounded-xl border border-border overflow-hidden bg-card">
             {added.map((s, idx) => (
@@ -492,7 +509,21 @@ const MySubjects = () => {
             studentLevel === "O-Level" ? "Step 1 of 3 — Enter your results" : "Step 1 of 4 — Enter your results",
             () => setStep("level")
           )}
-          <main className="container mx-auto px-4 py-6 max-w-2xl space-y-6">
+          <main className="container mx-auto px-4 py-6 max-w-3xl space-y-6">
+            <Card className="border-border shadow-sm">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Add your results quickly</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Search a subject, pick grade, then click Add.</p>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <span className="font-semibold text-foreground">{sessionSubjects.length}</span> subject{sessionSubjects.length !== 1 ? "s" : ""} added
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {studentLevel === "A-Level" && (
               <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/15 flex items-start gap-2.5">
                 <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
@@ -505,10 +536,8 @@ const MySubjects = () => {
               </div>
             )}
 
-            {/* O-Level form (always shown) */}
             {renderSubjectForm("O-Level")}
 
-            {/* A-Level form (A-Level students only) */}
             {studentLevel === "A-Level" && (
               <>
                 <div className="h-px bg-border" />
@@ -516,9 +545,8 @@ const MySubjects = () => {
               </>
             )}
 
-            {/* Summary bar & continue */}
             <div className="sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border -mx-4 px-4 py-3 mt-6">
-              <div className="flex items-center justify-between max-w-2xl mx-auto">
+              <div className="flex items-center justify-between max-w-3xl mx-auto">
                 <div className="text-sm text-muted-foreground">
                   <span className="font-semibold text-foreground">{sessionSubjects.length}</span> subject{sessionSubjects.length !== 1 ? "s" : ""} added
                   {studentLevel === "A-Level" && (
