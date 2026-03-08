@@ -30,7 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Loader2, BookOpen, Upload, Download, FileSpreadsheet, FileText, Search, AlertCircle, XCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, BookOpen, Upload, Download, FileSpreadsheet, FileText, Search, AlertCircle, XCircle, GraduationCap } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +56,14 @@ interface Subject {
   name: string;
   level: string;
   category: string | null;
+}
+
+interface Diploma {
+  id: string;
+  name: string;
+  institution: string | null;
+  field: string | null;
+  level: string;
 }
 
 interface Program {
@@ -94,6 +102,7 @@ export default function AdminPrograms() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [universities, setUniversities] = useState<University[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [diplomas, setDiplomas] = useState<Diploma[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubjectsDialogOpen, setIsSubjectsDialogOpen] = useState(false);
@@ -115,6 +124,9 @@ export default function AdminPrograms() {
   const [tempSelectedSubjects, setTempSelectedSubjects] = useState<string[]>([]);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [minRequiredFromGroup, setMinRequiredFromGroup] = useState(1);
+  const [isDiplomaDialogOpen, setIsDiplomaDialogOpen] = useState(false);
+  const [selectedProgramDiplomas, setSelectedProgramDiplomas] = useState<Array<{ diploma_id: string; is_required: boolean; minimum_classification: string | null }>>([]);
+  const [diplomaSearchQuery, setDiplomaSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -145,10 +157,11 @@ export default function AdminPrograms() {
 
   const fetchData = async () => {
     try {
-      const [programsRes, universitiesRes, subjectsRes] = await Promise.all([
+      const [programsRes, universitiesRes, subjectsRes, diplomasRes] = await Promise.all([
         supabase.from("programs").select("*, universities(name)").order("name"),
         supabase.from("universities").select("id, name").eq("is_active", true).order("name"),
         supabase.from("subjects").select("id, name, level, category").eq("is_active", true).order("name"),
+        supabase.from("diplomas").select("id, name, institution, field, level").eq("is_active", true).order("name"),
       ]);
 
       if (programsRes.error) throw programsRes.error;
@@ -158,6 +171,7 @@ export default function AdminPrograms() {
       setPrograms(programsRes.data || []);
       setUniversities(universitiesRes.data || []);
       setSubjects(subjectsRes.data || []);
+      setDiplomas(diplomasRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({ title: "Error", description: "Failed to load data", variant: "destructive" });
@@ -458,6 +472,69 @@ export default function AdminPrograms() {
     setNewSubjectName("");
     setMinRequiredFromGroup(1);
   };
+
+  // Diploma management functions
+  const openDiplomaDialog = async (program: Program) => {
+    setSelectedProgram(program);
+    setDiplomaSearchQuery("");
+    try {
+      const { data, error } = await supabase
+        .from("program_diplomas")
+        .select("diploma_id, is_required, minimum_classification")
+        .eq("program_id", program.id);
+      if (error) throw error;
+      setSelectedProgramDiplomas(data || []);
+    } catch (error) {
+      console.error("Error fetching program diplomas:", error);
+      setSelectedProgramDiplomas([]);
+    }
+    setIsDiplomaDialogOpen(true);
+  };
+
+  const toggleDiploma = (diplomaId: string) => {
+    const exists = selectedProgramDiplomas.find(pd => pd.diploma_id === diplomaId);
+    if (exists) {
+      setSelectedProgramDiplomas(prev => prev.filter(pd => pd.diploma_id !== diplomaId));
+    } else {
+      setSelectedProgramDiplomas(prev => [...prev, { diploma_id: diplomaId, is_required: true, minimum_classification: "Pass" }]);
+    }
+  };
+
+  const updateDiplomaRequirement = (diplomaId: string, field: string, value: any) => {
+    setSelectedProgramDiplomas(prev => prev.map(pd => pd.diploma_id === diplomaId ? { ...pd, [field]: value } : pd));
+  };
+
+  const saveDiplomas = async () => {
+    if (!selectedProgram) return;
+    setIsSubmitting(true);
+    try {
+      await supabase.from("program_diplomas").delete().eq("program_id", selectedProgram.id);
+      if (selectedProgramDiplomas.length > 0) {
+        const { error } = await supabase.from("program_diplomas").insert(
+          selectedProgramDiplomas.map(pd => ({
+            program_id: selectedProgram.id,
+            diploma_id: pd.diploma_id,
+            is_required: pd.is_required,
+            minimum_classification: pd.minimum_classification,
+          }))
+        );
+        if (error) throw error;
+      }
+      toast({ title: "Success", description: "Diploma requirements updated" });
+      setIsDiplomaDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving diplomas:", error);
+      toast({ title: "Error", description: "Failed to save diploma requirements", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredDiplomas = diplomas.filter(d =>
+    d.name.toLowerCase().includes(diplomaSearchQuery.toLowerCase()) ||
+    (d.field || "").toLowerCase().includes(diplomaSearchQuery.toLowerCase()) ||
+    (d.institution || "").toLowerCase().includes(diplomaSearchQuery.toLowerCase())
+  );
 
   const getRequirementSummary = (): string => {
     if (formData.structured_requirements.length === 0) return formData.entry_requirements || "No requirements set";
@@ -1285,9 +1362,14 @@ export default function AdminPrograms() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(program)}>
+                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(program)} title="Edit program">
                               <Pencil className="w-4 h-4" />
                             </Button>
+                            {((program as any).entry_type === "diploma" || (program as any).entry_type === "special") && (
+                              <Button variant="ghost" size="icon" onClick={() => openDiplomaDialog(program)} title="Manage diploma requirements" className="text-amber-600 hover:text-amber-700">
+                                <GraduationCap className="w-4 h-4" />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" onClick={() => handleDelete(program.id)} className="text-destructive hover:text-destructive">
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -1301,6 +1383,84 @@ export default function AdminPrograms() {
             )}
           </CardContent>
         </Card>
+
+        {/* Diploma Requirements Dialog */}
+        <Dialog open={isDiplomaDialogOpen} onOpenChange={setIsDiplomaDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <GraduationCap className="w-5 h-5" /> Diploma Requirements for {selectedProgram?.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Select which diplomas qualify for entry into this program. Set whether each is required or optional and the minimum classification.
+              </p>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="Search diplomas by name, field, or institution..." value={diplomaSearchQuery} onChange={e => setDiplomaSearchQuery(e.target.value)} className="pl-10" />
+              </div>
+              {selectedProgramDiplomas.length > 0 && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-2">Selected Diplomas ({selectedProgramDiplomas.length}):</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedProgramDiplomas.map(pd => {
+                      const d = diplomas.find(dip => dip.id === pd.diploma_id);
+                      return d ? <Badge key={pd.diploma_id} variant="secondary" className="text-xs">{d.name}</Badge> : null;
+                    })}
+                  </div>
+                </div>
+              )}
+              <div className="grid gap-2 max-h-[400px] overflow-y-auto">
+                {filteredDiplomas.map(diploma => {
+                  const pd = selectedProgramDiplomas.find(p => p.diploma_id === diploma.id);
+                  return (
+                    <div key={diploma.id} className={`flex items-center gap-4 p-3 border rounded-lg transition-colors ${pd ? 'bg-primary/5 border-primary/30' : ''}`}>
+                      <Checkbox checked={!!pd} onCheckedChange={() => toggleDiploma(diploma.id)} />
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-sm">{diploma.name}</span>
+                        <div className="flex gap-2 mt-0.5">
+                          {diploma.field && <Badge variant="outline" className="text-xs">{diploma.field}</Badge>}
+                          {diploma.institution && <span className="text-xs text-muted-foreground">{diploma.institution}</span>}
+                        </div>
+                      </div>
+                      {pd && (
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <Label className="text-xs whitespace-nowrap">Required:</Label>
+                            <Switch checked={pd.is_required} onCheckedChange={(checked) => updateDiplomaRequirement(diploma.id, "is_required", checked)} />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Label className="text-xs whitespace-nowrap">Min:</Label>
+                            <Select value={pd.minimum_classification || "Pass"} onValueChange={(v) => updateDiplomaRequirement(diploma.id, "minimum_classification", v)}>
+                              <SelectTrigger className="w-24 h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Distinction">Distinction</SelectItem>
+                                <SelectItem value="Merit">Merit</SelectItem>
+                                <SelectItem value="Credit">Credit</SelectItem>
+                                <SelectItem value="Pass">Pass</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {filteredDiplomas.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No diplomas match your search.</p>
+                )}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsDiplomaDialogOpen(false)}>Cancel</Button>
+                <Button onClick={saveDiplomas} disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Save Diploma Requirements
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
