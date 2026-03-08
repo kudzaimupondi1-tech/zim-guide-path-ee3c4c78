@@ -356,7 +356,7 @@ const MySubjects = () => {
           className="h-10"
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-2">
+        <div className="grid grid-cols-1 gap-2">
           <Select value={subjectId} onValueChange={setSubjectId}>
             <SelectTrigger className="h-10 text-sm bg-background">
               <SelectValue placeholder="Choose a subject..." />
