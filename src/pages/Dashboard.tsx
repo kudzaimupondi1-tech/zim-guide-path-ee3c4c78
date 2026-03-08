@@ -165,18 +165,18 @@ const Dashboard = () => {
     <div className="min-h-screen bg-secondary/30">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/dashboard" className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-                <GraduationCap className="w-5 h-5 text-primary-foreground" />
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            <Link to="/dashboard" className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+                <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
               </div>
               <div>
-                <span className="text-base font-bold text-foreground leading-none">EduGuide</span>
-                <span className="text-[11px] text-muted-foreground block">Zimbabwe</span>
+                <span className="text-sm sm:text-base font-bold text-foreground leading-none">EduGuide</span>
+                <span className="text-[10px] sm:text-[11px] text-muted-foreground block">Zimbabwe</span>
               </div>
             </Link>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               {/* Query Chat Icon */}
               <div className="relative">
                 <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setShowChat(!showChat)}>
@@ -195,7 +195,7 @@ const Dashboard = () => {
                   )}
                 </Button>
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                     <div className="p-4 border-b border-border bg-muted/30">
                       <h3 className="font-bold text-sm text-foreground">Notifications</h3>
                     </div>
@@ -238,10 +238,10 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-3xl">
         {/* Welcome */}
         <section className="mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight">
             {getGreeting()}, {getUserName()} 👋
           </h1>
           <p className="text-muted-foreground mt-1.5 text-sm">Your personalised university guidance starts here.</p>

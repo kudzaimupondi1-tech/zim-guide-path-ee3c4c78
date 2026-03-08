@@ -356,7 +356,7 @@ const MySubjects = () => {
           className="h-10"
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-2">
+        <div className="grid grid-cols-1 gap-2">
           <Select value={subjectId} onValueChange={setSubjectId}>
             <SelectTrigger className="h-10 text-sm bg-background">
               <SelectValue placeholder="Choose a subject..." />
@@ -373,25 +373,27 @@ const MySubjects = () => {
             </SelectContent>
           </Select>
 
-          <Select value={grade} onValueChange={setGrade}>
-            <SelectTrigger className="h-10 text-sm bg-background">
-              <SelectValue placeholder="Grade" />
-            </SelectTrigger>
-            <SelectContent>
-              {grades.map((g) => (
-                <SelectItem key={g} value={g}>{g}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={grade} onValueChange={setGrade}>
+              <SelectTrigger className="h-10 text-sm bg-background flex-1">
+                <SelectValue placeholder="Grade" />
+              </SelectTrigger>
+              <SelectContent>
+                {grades.map((g) => (
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Button
-            onClick={() => handleAddSubject(level)}
-            disabled={!subjectId || !grade || saving}
-            size="sm"
-            className="h-10 px-5 shrink-0"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Add</>}
-          </Button>
+            <Button
+              onClick={() => handleAddSubject(level)}
+              disabled={!subjectId || !grade || saving}
+              size="sm"
+              className="h-10 px-5 shrink-0"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Add</>}
+            </Button>
+          </div>
         </div>
 
         {added.length > 0 && (
@@ -546,8 +548,8 @@ const MySubjects = () => {
             )}
 
             <div className="sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border -mx-4 px-4 py-3 mt-6">
-              <div className="flex items-center justify-between max-w-3xl mx-auto">
-                <div className="text-sm text-muted-foreground">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 max-w-3xl mx-auto">
+                <div className="text-sm text-muted-foreground text-center sm:text-left">
                   <span className="font-semibold text-foreground">{sessionSubjects.length}</span> subject{sessionSubjects.length !== 1 ? "s" : ""} added
                   {studentLevel === "A-Level" && (
                     <span className="text-[11px] ml-2">
@@ -632,20 +634,20 @@ const MySubjects = () => {
 
             {/* Action bar */}
             <div className="sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border -mx-4 px-4 py-3">
-              <div className="flex items-center justify-between max-w-2xl mx-auto">
-                <Button variant="outline" size="sm" onClick={() => setStep("add")} className="rounded-xl">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 max-w-2xl mx-auto">
+                <Button variant="outline" size="sm" onClick={() => setStep("add")} className="rounded-xl order-2 sm:order-1">
                   <ArrowLeft className="w-4 h-4 mr-1.5" /> Edit
                 </Button>
                 {studentLevel === "O-Level" ? (
-                  <div className="flex flex-col items-end gap-2.5">
+                  <div className="flex flex-col items-stretch gap-2.5 order-1 sm:order-2">
                     {!isAdmin && (
                       <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
+                        <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
                         <Input
                           placeholder="EcoCash number"
                           value={phoneNumber}
                           onChange={e => setPhoneNumber(e.target.value)}
-                          className="h-9 w-44 text-sm"
+                          className="h-9 text-sm"
                         />
                       </div>
                     )}
@@ -661,7 +663,7 @@ const MySubjects = () => {
                 ) : (
                   <Button
                     onClick={() => setStep("university")}
-                    className="h-10 rounded-xl font-semibold px-6"
+                    className="h-10 rounded-xl font-semibold px-6 order-1 sm:order-2"
                   >
                     Select Universities <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
@@ -706,7 +708,7 @@ const MySubjects = () => {
                 <div>
                   <h3 className="text-sm font-bold text-foreground mb-1">Choose Your Plan</h3>
                   <p className="text-[11px] text-muted-foreground mb-4">Select how many universities you'd like recommendations from</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {A_LEVEL_PRICING.map((option) => {
                       const isSelected = selectedPricing === option.label;
                       return (
@@ -852,7 +854,7 @@ const MySubjects = () => {
 
                 {/* Bottom action bar */}
                 <div className="sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border -mx-4 px-4 py-3">
-                  <div className="flex items-center justify-between max-w-2xl mx-auto">
+                  <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 max-w-2xl mx-auto">
                     <Button variant="outline" size="sm" onClick={() => setStep("confirm")} className="rounded-xl">
                       <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
                     </Button>

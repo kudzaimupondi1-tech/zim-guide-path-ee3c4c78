@@ -304,23 +304,23 @@ const Recommendations = () => {
     <PageTransition>
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" asChild><Link to="/dashboard"><ArrowLeft className="w-5 h-5" /></Link></Button>
-              <div>
-                <h1 className="font-bold text-lg text-foreground">Recommendations</h1>
-                <p className="text-sm text-muted-foreground">{isOLevelStudent ? "A-Level combinations" : "Programs matched to your grades"}</p>
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <Button variant="ghost" size="icon" className="shrink-0" asChild><Link to="/dashboard"><ArrowLeft className="w-5 h-5" /></Link></Button>
+              <div className="min-w-0">
+                <h1 className="font-bold text-base sm:text-lg text-foreground truncate">Recommendations</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{isOLevelStudent ? "A-Level combinations" : "Programs matched to your grades"}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs"><Star className="w-3 h-3 mr-1" />{starCount}/{MAX_STARS} starred</Badge>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap"><Star className="w-3 h-3 mr-1" />{starCount}/{MAX_STARS}</Badge>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {studentSubjects.length === 0 ? (
           <Card><CardContent className="py-12 text-center">
             <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
@@ -385,7 +385,7 @@ const Recommendations = () => {
           <>
             <div className="relative max-w-md mb-6">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input placeholder="Search programs or universities..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
+              <Input placeholder="Search programs or universities..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 h-10" />
             </div>
 
             <p className="text-muted-foreground mb-4">Found <span className="font-semibold text-foreground">{displayPrograms.length}</span> programs matching your grades</p>
@@ -438,7 +438,7 @@ const Recommendations = () => {
       </main>
 
       <Dialog open={!!selectedProgramDetail} onOpenChange={open => { if (!open) setSelectedProgramDetail(null); }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto mx-3 sm:mx-auto">
           {selectedProgramDetail && (
             <>
               <DialogHeader>
