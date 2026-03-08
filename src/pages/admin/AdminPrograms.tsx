@@ -544,10 +544,10 @@ export default function AdminPrograms() {
     if (formData.structured_requirements.length === 0) return formData.entry_requirements || "No requirements set";
     const joiner = formData.condition_logic === "AND" ? " AND " : " OR ";
     return formData.structured_requirements.map((r) => {
-      if (r.qualification_type === "Diploma") {
+      if (DIPLOMA_LIKE_TYPES.includes(r.qualification_type)) {
         const reqDiplomas = (r as any).required_diplomas || [];
         const diplomaNames = reqDiplomas.map((id: string) => diplomas.find(d => d.id === id)?.name || id).join(", ");
-        let text = `Diploma (min: ${r.min_classification || "Pass"})`;
+        let text = `${r.qualification_type} (min: ${r.min_classification || "Pass"})`;
         if (diplomaNames) text += `: ${diplomaNames}`;
         return text;
       }
