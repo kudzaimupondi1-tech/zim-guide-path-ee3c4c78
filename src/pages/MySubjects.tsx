@@ -22,10 +22,10 @@ type StudentSubject = Tables<"student_subjects"> & { subjects?: Subject };
 const grades = ["A", "B", "C", "D", "E", "O", "F"];
 
 const A_LEVEL_PRICING = [
-  { count: 1, label: "1 University Only", price: 0.5 },
-  { count: 2, label: "2 Universities Only", price: 1.0 },
-  { count: 3, label: "3 Universities Only", price: 1.5 },
-  { count: 0, label: "All Universities", price: 2.0 },
+  { count: 1, label: "1 University Only", price: 0.50 },
+  { count: 2, label: "2 Universities Only", price: 1.50 },
+  { count: 3, label: "3 Universities Only", price: 3.00 },
+  { count: 0, label: "All Universities", price: 5.00 },
 ];
 
 type WizardStep = "level" | "add" | "confirm" | "university" | "payment" | "processing";
