@@ -76,12 +76,13 @@ const Recommendations = () => {
       // Track recommendation view
       supabase.from("profiles").update({ recommendation_viewed_at: new Date().toISOString() } as any).eq("user_id", userId).then();
 
-      const [subjectsData, programsData, universitiesData, combinationsData, favouritesData] = await Promise.all([
+      const [subjectsData, programsData, universitiesData, combinationsData, favouritesData, studentDiplomasData] = await Promise.all([
         supabase.from("student_subjects").select("*, subjects(*)").eq("user_id", userId),
         supabase.from("programs").select("*, universities(*), program_subjects(*, subjects(*)), program_careers(*, careers(*)), program_diplomas(*, diplomas(*))").eq("is_active", true).order("name"),
         supabase.from("universities").select("*").eq("is_active", true).order("name"),
         supabase.from("subject_combinations").select("*").eq("is_active", true).eq("level", "A-Level"),
         supabase.from("favourite_programs").select("program_id").eq("user_id", userId),
+        supabase.from("student_diplomas").select("id, diploma_id, classification, diplomas(*)").eq("user_id", userId),
       ]);
       setStudentSubjects(subjectsData.data || []);
       setPrograms(programsData.data || []);
@@ -91,6 +92,7 @@ const Recommendations = () => {
       const starred = new Set((favouritesData.data || []).map((f: any) => f.program_id));
       setStarredIds(starred);
       setStarCount(starred.size);
+      setStudentDiplomas((studentDiplomasData.data || []) as any);
     } catch (error) {
       toast.error("Failed to load recommendations");
     } finally {
