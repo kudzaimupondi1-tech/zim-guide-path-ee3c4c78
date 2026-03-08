@@ -16,7 +16,7 @@ interface Query {
   responded_at: string | null;
 }
 
-export const StudentQueryChat = ({ userId, open, onClose }: { userId: string; open: boolean; onClose: () => void }) => {
+export const StudentQueryChat = ({ userId, open, onClose, onRead }: { userId: string; open: boolean; onClose: () => void; onRead?: () => void }) => {
   const [queries, setQueries] = useState<Query[]>([]);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -26,7 +26,11 @@ export const StudentQueryChat = ({ userId, open, onClose }: { userId: string; op
   const isOverLimit = wordCount > MAX_WORDS;
 
   useEffect(() => {
-    if (open) fetchQueries();
+    if (open) {
+      fetchQueries();
+      // Clear badge when chat is opened
+      onRead?.();
+    }
   }, [open]);
 
   useEffect(() => {

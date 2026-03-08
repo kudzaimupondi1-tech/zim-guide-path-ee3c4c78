@@ -30,18 +30,31 @@ export const StudentRating = () => {
       if (!user) { toast.error("Please sign in to rate"); return; }
 
       const ratingType = type === "up" ? "thumbs-up" : "thumbs-down";
-      const { error } = await supabase
+
+      // Check if rating exists
+      const { data: existing } = await supabase
         .from("system_ratings")
-        .upsert({
-          user_id: user.id,
-          rating_type: ratingType,
-          star_rating: type === "up" ? 10 : 1,
-        } as any, { onConflict: "user_id" });
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      let error;
+      if (existing) {
+        ({ error } = await supabase
+          .from("system_ratings")
+          .update({ rating_type: ratingType, star_rating: type === "up" ? 10 : 1 })
+          .eq("user_id", user.id));
+      } else {
+        ({ error } = await supabase
+          .from("system_ratings")
+          .insert({ user_id: user.id, rating_type: ratingType, star_rating: type === "up" ? 10 : 1 }));
+      }
 
       if (error) throw error;
       setCurrentRating(type);
       toast.success(type === "up" ? "Thanks for the positive feedback! 🎉" : "Thanks for your feedback. We'll work to improve!");
     } catch (error: any) {
+      console.error("Rating error:", error);
       toast.error("Failed to submit rating");
     } finally {
       setLoading(false);

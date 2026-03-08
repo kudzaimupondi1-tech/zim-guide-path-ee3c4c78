@@ -72,7 +72,6 @@ const Dashboard = () => {
       setSubjectCount(subjectCountRes.count || 0);
       setNotifications(notificationsRes.data || []);
       setFavourites((favouritesRes.data as any[]) || []);
-      // Count responded but potentially unread queries
       setUnrespondedQueries(queriesRes.count || 0);
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -83,7 +82,6 @@ const Dashboard = () => {
 
   const syncAnnouncements = async (userId: string) => {
     try {
-      // Get published announcements
       const { data: announcements } = await supabase
         .from("announcements")
         .select("id, title, content, published_at")
@@ -91,7 +89,6 @@ const Dashboard = () => {
 
       if (!announcements || announcements.length === 0) return;
 
-      // Get existing notification titles for this user to avoid duplicates
       const { data: existingNotifs } = await supabase
         .from("student_notifications")
         .select("title")
@@ -100,7 +97,6 @@ const Dashboard = () => {
 
       const existingTitles = new Set((existingNotifs || []).map(n => n.title));
 
-      // Insert announcements that don't exist as notifications yet
       const newNotifs = announcements
         .filter(a => !existingTitles.has(`📢 ${a.title}`))
         .map(a => ({
@@ -141,6 +137,10 @@ const Dashboard = () => {
     if (profile?.full_name) return profile.full_name.split(" ")[0];
     if (user?.user_metadata?.full_name) return user.user_metadata.full_name.split(" ")[0];
     return "Student";
+  };
+
+  const handleChatRead = () => {
+    setUnrespondedQueries(0);
   };
 
   const profileCompleteness = Math.min(100, (subjectCount > 0 ? 50 : 0) + (profile?.full_name ? 50 : 25));
@@ -250,7 +250,6 @@ const Dashboard = () => {
 
         {/* Action Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-          {/* Add Subjects */}
           <Card className="group border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 overflow-hidden relative">
             <div className="absolute top-0 left-0 right-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardContent className="pt-7 pb-6 px-6 flex flex-col h-full">
@@ -269,7 +268,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Favoured Programs */}
           <Card className="group border border-border shadow-sm hover:shadow-lg hover:border-yellow-400/40 transition-all duration-300 overflow-hidden relative">
             <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardContent className="pt-7 pb-6 px-6 flex flex-col h-full">
@@ -335,7 +333,7 @@ const Dashboard = () => {
       </main>
 
       {/* Chat Widget */}
-      {user && <StudentQueryChat userId={user.id} open={showChat} onClose={() => setShowChat(false)} />}
+      {user && <StudentQueryChat userId={user.id} open={showChat} onClose={() => setShowChat(false)} onRead={handleChatRead} />}
     </div>
   );
     </PageTransition>
