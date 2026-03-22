@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+=======
+// EcoCash Query Transaction Endpoint
+// GET /ecocash-query?endUserId=...&clientCorrelator=...
+// Handles transaction status queries to EcoCash API
+>>>>>>> b17f7b7 (Describe what changes you made)
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,6 +12,7 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
+<<<<<<< HEAD
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -55,6 +62,24 @@ Deno.serve(async (req) => {
 
     const username = Deno.env.get("ECOCASH_USERNAME")!;
     const password = Deno.env.get("ECOCASH_PASSWORD")!;
+=======
+  if (req.method !== "GET") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: corsHeaders });
+  }
+
+  try {
+    const url = new URL(req.url);
+    const endUserId = url.searchParams.get("endUserId");
+    const clientCorrelator = url.searchParams.get("clientCorrelator");
+    if (!endUserId || !clientCorrelator) {
+      return new Response(JSON.stringify({ error: "Missing required query parameters" }), { status: 400, headers: corsHeaders });
+    }
+
+    const ecocashBaseUrl = Deno.env.get("ECOCASH_QUERY_BASE_URL")!;
+    const username = Deno.env.get("ECOCASH_USERNAME")!;
+    const password = Deno.env.get("ECOCASH_PASSWORD")!;
+    const queryUrl = `${ecocashBaseUrl}/${endUserId}/transactions/amount/${clientCorrelator}`;
+>>>>>>> b17f7b7 (Describe what changes you made)
     const basicAuth = btoa(`${username}:${password}`);
 
     const ecocashResponse = await fetch(queryUrl, {
@@ -64,6 +89,7 @@ Deno.serve(async (req) => {
         Authorization: `Basic ${basicAuth}`,
       },
     });
+<<<<<<< HEAD
 
     const ecocashData = await ecocashResponse.json();
     console.log("EcoCash query response:", JSON.stringify(ecocashData));
@@ -86,13 +112,22 @@ Deno.serve(async (req) => {
       success: true,
       transaction: ecocashData,
     }), {
+=======
+    const ecocashData = await ecocashResponse.json();
+
+    return new Response(JSON.stringify(ecocashData), {
+>>>>>>> b17f7b7 (Describe what changes you made)
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("EcoCash query error:", error);
+<<<<<<< HEAD
     return new Response(JSON.stringify({ error: (error as Error).message || "Query failed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+=======
+    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers: corsHeaders });
+>>>>>>> b17f7b7 (Describe what changes you made)
   }
 });

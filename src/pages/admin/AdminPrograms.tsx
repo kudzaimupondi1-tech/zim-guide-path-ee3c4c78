@@ -100,6 +100,31 @@ const programColumns: ExcelColumn[] = [
   { key: "subject_requirements", header: "Subject Requirements (e.g., Mathematics:B, Physics:C)" },
 ];
 
+interface ProgramFormData {
+  name: string;
+  university_id: string;
+  faculty: string;
+  degree_type: string;
+  description: string;
+  entry_requirements: string;
+  duration_years: number;
+  is_active: boolean;
+  entry_type: string;
+  condition_logic: string;
+  structured_requirements: Array<{
+    qualification_type: string;
+    min_passes: number;
+    min_grade: string;
+    compulsory_subjects?: string[];
+    subject_groups?: Array<{
+      subjects: string[];
+      min_required: number;
+    }>;
+  }>;
+  min_experience_years: number;
+  other_requirements: string;
+}
+
 export default function AdminPrograms() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [universities, setUniversities] = useState<University[]>([]);
@@ -134,7 +159,7 @@ export default function AdminPrograms() {
   const { toast } = useToast();
   const { exportToExcel, importFromExcel, downloadTemplate, isImporting, isExporting } = useExcelImportExport();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProgramFormData>({
     name: "",
     university_id: "",
     faculty: "",
@@ -145,6 +170,7 @@ export default function AdminPrograms() {
     is_active: true,
     entry_type: "normal",
     condition_logic: "AND",
+<<<<<<< HEAD
     structured_requirements: [] as Array<{
       qualification_type: string;
       min_passes: number;
@@ -157,6 +183,11 @@ export default function AdminPrograms() {
       }>;
       required_diplomas?: string[];
     }>,
+=======
+    structured_requirements: [],
+    min_experience_years: 0,
+    other_requirements: "",
+>>>>>>> b17f7b7 (Describe what changes you made)
   });
 
   const fetchData = async () => {
@@ -205,7 +236,9 @@ export default function AdminPrograms() {
             entry_type: formData.entry_type,
             condition_logic: formData.condition_logic,
             structured_requirements: formData.structured_requirements,
-          })
+            min_experience_years: formData.min_experience_years || null,
+            other_requirements: formData.other_requirements || null,
+          } as any)
           .eq("id", editingProgram.id);
         if (error) throw error;
         toast({ title: "Success", description: "Program updated successfully" });
@@ -222,7 +255,9 @@ export default function AdminPrograms() {
           entry_type: formData.entry_type,
           condition_logic: formData.condition_logic,
           structured_requirements: formData.structured_requirements,
-        });
+          min_experience_years: formData.min_experience_years || null,
+          other_requirements: formData.other_requirements || null,
+        } as any);
         if (error) throw error;
         toast({ title: "Success", description: "Program added successfully" });
       }
@@ -289,6 +324,8 @@ export default function AdminPrograms() {
       entry_type: (program as any).entry_type || "normal",
       condition_logic: (program as any).condition_logic || "AND",
       structured_requirements: (program as any).structured_requirements || [],
+      min_experience_years: (program as any).min_experience_years || 0,
+      other_requirements: (program as any).other_requirements || "",
     });
     setIsDialogOpen(true);
   };
@@ -355,6 +392,7 @@ export default function AdminPrograms() {
       name: "", university_id: "", faculty: "", degree_type: "", description: "",
       entry_requirements: "", duration_years: 4, is_active: true,
       entry_type: "normal", condition_logic: "AND", structured_requirements: [],
+      min_experience_years: 0, other_requirements: "",
     });
   };
 
@@ -982,13 +1020,26 @@ export default function AdminPrograms() {
                       <Input type="number" min={1} max={20} value={minRequiredFromGroup} onChange={(e) => setMinRequiredFromGroup(parseInt(e.target.value) || 1)} />
                     </div>
                   )}
-                  <p className="text-sm text-muted-foreground">{editingCompulsory ? "Select subjects that must ALL be present" : "Select subjects for this group or add a new one."}</p>
+                  <p className="text-sm text-muted-foreground">{editingCompulsory ? "Select subjects that must ALL be present. To allow alternatives, select multiple and click 'Group as OR'." : "Select subjects for this group or add a new one."}</p>
                   {tempSelectedSubjects.length > 0 && (
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold">Selected Subjects ({tempSelectedSubjects.length}):</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold">Selected Subjects ({tempSelectedSubjects.length}):</Label>
+                        {editingCompulsory && tempSelectedSubjects.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => setTempSelectedSubjects([tempSelectedSubjects.join(" OR ")])}
+                          >
+                            Group as OR
+                          </Button>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {tempSelectedSubjects.map((sub) => (
-                          <Badge key={sub} variant={editingCompulsory ? "default" : "outline"} className="flex items-center gap-1 pr-1">
+                          <Badge key={sub} variant={editingCompulsory ? "default" : "outline"} className={`flex items-center gap-1 pr-1 ${sub.includes(" OR ") ? "bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-800" : ""}`}>
                             {sub}
                             <button
                               type="button"
@@ -1127,6 +1178,20 @@ export default function AdminPrograms() {
                     </div>
                   </div>
 
+                  {formData.entry_type === "diploma" && (
+                    <div className="grid gap-4 md:grid-cols-2 p-3 bg-muted/10 border border-muted rounded-lg">
+                      <div className="space-y-2">
+                        <Label>Minimum Years of Experience</Label>
+                        <Input type="number" min={0} value={formData.min_experience_years} onChange={(e) => setFormData({ ...formData, min_experience_years: parseInt(e.target.value) || 0 })} />
+                        <p className="text-xs text-muted-foreground">Required for mature entry applicants</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Other Mature Entry Requirements</Label>
+                        <Textarea value={formData.other_requirements} onChange={(e) => setFormData({ ...formData, other_requirements: e.target.value })} rows={2} placeholder="E.g. Valid practicing certificate" />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Structured Requirement Conditions */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -1194,6 +1259,7 @@ export default function AdminPrograms() {
                             </div>
                           )}
                         </div>
+<<<<<<< HEAD
 
                         {DIPLOMA_LIKE_TYPES.includes(req.qualification_type) ? (
                           /* Diploma-like: select from admin diploma list filtered by level */
@@ -1247,6 +1313,38 @@ export default function AdminPrograms() {
                                   {filteredDiplomas.length === 0 && (
                                     <p className="text-xs text-muted-foreground italic p-2">No {req.qualification_type.toLowerCase()}s configured. Add them in the Diplomas module first with level "{req.qualification_type}".</p>
                                   )}
+=======
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-xs font-semibold">Alternative Subjects (OR Logic)</Label>
+                              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Use this for requirements like "Mathematics OR Shona". Set 'At least 1' to enable OR logic.</p>
+                            </div>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addSubjectGroup(idx)} className="h-7 text-xs">
+                              <Plus className="w-3 h-3 mr-1" /> Add Group
+                            </Button>
+                          </div>
+                          {((req as any).subject_groups || []).length === 0 ? (
+                            <p className="text-xs text-muted-foreground italic">No alternative groups. Add one to set alternative subject requirements.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {((req as any).subject_groups || []).map((group: any, groupIdx: number) => (
+                                <div key={groupIdx} className="p-2 border rounded bg-muted/50 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-medium">Group {groupIdx + 1}: At least {group.min_required} of {group.subjects?.length || 0} subjects</span>
+                                    <Button type="button" size="sm" variant="ghost" onClick={() => removeSubjectGroup(idx, groupIdx)} className="h-6 text-destructive">
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {(group.subjects || []).map((sub: string) => (
+                                      <Badge key={sub} variant="outline" className="text-xs">{sub}</Badge>
+                                    ))}
+                                  </div>
+                                  <Button type="button" size="sm" variant="outline" onClick={() => openReqSubjectsDialog(idx, groupIdx)} className="h-7 text-xs w-full">
+                                    Edit Group
+                                  </Button>
+>>>>>>> b17f7b7 (Describe what changes you made)
                                 </div>
                               );
                             })()}

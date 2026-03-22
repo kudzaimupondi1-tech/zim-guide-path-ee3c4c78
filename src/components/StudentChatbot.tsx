@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Bot, User, Loader2, Minimize2, Sparkles, Gradua
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
 import { useLocation } from "react-router-dom";
 
@@ -29,6 +30,7 @@ export const StudentChatbot = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isChatEnabled, setIsChatEnabled] = useState(true);
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +39,26 @@ export const StudentChatbot = () => {
 
   // Check if current route is a student route
   const isStudentRoute = STUDENT_ROUTES.some(route => location.pathname.startsWith(route));
+
+  // Check if chat is enabled by Admin
+  useEffect(() => {
+    const checkChatStatus = async () => {
+      try {
+        const { data } = await supabase
+          .from("system_settings")
+          .select("setting_value")
+          .eq("setting_key", "chat_settings")
+          .maybeSingle();
+
+        if (data?.setting_value && typeof (data.setting_value as any).enabled === "boolean") {
+          setIsChatEnabled((data.setting_value as any).enabled);
+        }
+      } catch (err) {
+        console.error("Failed to fetch chat settings", err);
+      }
+    };
+    checkChatStatus();
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -65,7 +87,7 @@ export const StudentChatbot = () => {
     setIsLoading(true);
 
     let assistantContent = "";
-    
+
     const updateAssistant = (chunk: string) => {
       assistantContent += chunk;
       setMessages(prev => {
@@ -101,7 +123,7 @@ export const StudentChatbot = () => {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         textBuffer += decoder.decode(value, { stream: true });
 
         let newlineIndex: number;
@@ -130,9 +152,9 @@ export const StudentChatbot = () => {
       console.error("Chat error:", error);
       setMessages(prev => [
         ...prev,
-        { 
-          role: "assistant", 
-          content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment. 🙏" 
+        {
+          role: "assistant",
+          content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment. 🙏"
         }
       ]);
     } finally {
@@ -147,8 +169,8 @@ export const StudentChatbot = () => {
     }
   };
 
-  // Don't render on non-student routes
-  if (!isStudentRoute) return null;
+  // Don't render on non-student routes or if chat is disabled
+  if (!isStudentRoute || !isChatEnabled) return null;
 
   if (!isOpen) {
     return (
@@ -165,9 +187,8 @@ export const StudentChatbot = () => {
   }
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 bg-card border border-border rounded-2xl shadow-2xl transition-all duration-300 ${
-      isMinimized ? "w-80 h-14" : "w-[400px] h-[600px] max-h-[80vh]"
-    } flex flex-col`}>
+    <div className={`fixed bottom-6 right-6 z-50 bg-card border border-border rounded-2xl shadow-2xl transition-all duration-300 ${isMinimized ? "w-80 h-14" : "w-[400px] h-[600px] max-h-[80vh]"
+      } flex flex-col`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-primary/10 to-secondary/10 rounded-t-2xl">
         <div className="flex items-center gap-3">
@@ -222,22 +243,20 @@ export const StudentChatbot = () => {
                   key={idx}
                   className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    msg.role === "user" 
-                      ? "bg-secondary" 
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === "user"
+                      ? "bg-secondary"
                       : "bg-gradient-to-br from-primary to-secondary"
-                  }`}>
+                    }`}>
                     {msg.role === "user" ? (
                       <User className="w-4 h-4 text-secondary-foreground" />
                     ) : (
                       <Bot className="w-4 h-4 text-white" />
                     )}
                   </div>
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                    msg.role === "user" 
-                      ? "bg-secondary text-secondary-foreground" 
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === "user"
+                      ? "bg-secondary text-secondary-foreground"
                       : "bg-muted text-foreground"
-                  }`}>
+                    }`}>
                     <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
@@ -300,9 +319,9 @@ export const StudentChatbot = () => {
                 className="flex-1 min-h-[44px] max-h-[120px] resize-none"
                 rows={1}
               />
-              <Button 
-                type="submit" 
-                size="icon" 
+              <Button
+                type="submit"
+                size="icon"
                 disabled={isLoading || !input.trim()}
                 className="h-[44px] w-[44px]"
               >

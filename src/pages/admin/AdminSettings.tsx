@@ -13,6 +13,7 @@ import { Settings, Shield, Database, Bell, Save, ThumbsUp, ThumbsDown, UserX, Lo
 
 interface SystemSettings {
   maintenance_mode: boolean;
+  chat_enabled: boolean;
   allow_registration: boolean;
   require_email_verification: boolean;
   max_subjects_per_student: number;
@@ -31,6 +32,7 @@ interface RatingStats {
 export default function AdminSettings() {
   const [settings, setSettings] = useState<SystemSettings>({
     maintenance_mode: false,
+    chat_enabled: true,
     allow_registration: true,
     require_email_verification: true,
     max_subjects_per_student: 10,
@@ -61,6 +63,7 @@ export default function AdminSettings() {
 
       setSettings({
         maintenance_mode: settingsMap.maintenance_mode?.enabled || false,
+        chat_enabled: settingsMap.chat_settings?.enabled ?? true,
         allow_registration: settingsMap.registration?.enabled ?? true,
         require_email_verification: settingsMap.registration?.require_verification ?? true,
         max_subjects_per_student: settingsMap.student_limits?.max_subjects || 10,
@@ -91,6 +94,7 @@ export default function AdminSettings() {
     try {
       const settingsToSave = [
         { setting_key: "maintenance_mode", setting_value: { enabled: settings.maintenance_mode }, category: "system" },
+        { setting_key: "chat_settings", setting_value: { enabled: settings.chat_enabled }, category: "system" },
         { setting_key: "registration", setting_value: { enabled: settings.allow_registration, require_verification: settings.require_email_verification }, category: "auth" },
         { setting_key: "student_limits", setting_value: { max_subjects: settings.max_subjects_per_student }, category: "limits" },
         { setting_key: "notifications", setting_value: { admin_email: settings.notification_email }, category: "notifications" },
@@ -198,6 +202,13 @@ export default function AdminSettings() {
                     <p className="text-sm text-muted-foreground mt-1">When enabled, only admins can access the system</p>
                   </div>
                   <Switch checked={settings.maintenance_mode} onCheckedChange={(checked) => setSettings({ ...settings, maintenance_mode: checked })} />
+                </div>
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-muted">
+                  <div>
+                    <Label className="font-medium">Student Assistant Chat</Label>
+                    <p className="text-sm text-muted-foreground mt-1">Enable or disable the AI chatbot for students</p>
+                  </div>
+                  <Switch checked={settings.chat_enabled} onCheckedChange={(checked) => setSettings({ ...settings, chat_enabled: checked })} />
                 </div>
                 <div className="space-y-2">
                   <Label>Maximum Subjects per Student</Label>
