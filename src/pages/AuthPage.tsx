@@ -31,26 +31,40 @@ const AuthPage = () => {
       // Don't redirect during signup process
       if (isSigningUp.current) return;
       if (session?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-        await redirectBasedOnRole(session.user.id);
+        await redirectBasedOnRole(session.user);
       }
     });
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (isSigningUp.current) return;
       if (session?.user) {
-        await redirectBasedOnRole(session.user.id);
+        await redirectBasedOnRole(session.user);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const redirectBasedOnRole = async (userId: string) => {
+  const redirectBasedOnRole = async (user: any) => {
     if (isRouting.current) return;
     isRouting.current = true;
+    
+    // Fast path: check user_metadata to avoid a slow database RPC on mobile devices
+    const role = user?.user_metadata?.selected_role;
+    if (role === "admin") {
+      navigate("/admin");
+      setTimeout(() => { isRouting.current = false; }, 1000);
+      return;
+    } else if (role === "student") {
+      navigate("/dashboard");
+      setTimeout(() => { isRouting.current = false; }, 1000);
+      return;
+    }
+
+    // Slow path fallback: fetch role from database
     try {
       const { data: hasAdminRole } = await supabase.rpc("has_role", {
-        _user_id: userId,
+        _user_id: user.id,
         _role: "admin",
       });
 
@@ -83,7 +97,7 @@ const AuthPage = () => {
         toast.success("Welcome back!");
         
         if (data.user) {
-          await redirectBasedOnRole(data.user.id);
+          await redirectBasedOnRole(data.user);
         }
       } else {
         // Block auth state listener during signup
