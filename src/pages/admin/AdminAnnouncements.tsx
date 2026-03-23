@@ -38,7 +38,7 @@ export default function AdminAnnouncements() {
     priority: "normal",
     target_audience: "all",
     is_published: false,
-    expires_at: "",
+    duration: "never",
   });
 
   useEffect(() => {
@@ -65,14 +65,25 @@ export default function AdminAnnouncements() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let expires_at = null;
+      if (formData.duration !== "never") {
+        const days = parseInt(formData.duration);
+        const expireDate = new Date();
+        expireDate.setDate(expireDate.getDate() + days);
+        expires_at = expireDate.toISOString();
+      } else if (editingAnnouncement && editingAnnouncement.expires_at) {
+        // if they are editing and it previously had an expiry, but now it's 'never', we clear it
+        expires_at = null;
+      }
+
       const payload = {
         title: formData.title,
         content: formData.content,
         priority: formData.priority,
         target_audience: formData.target_audience,
         is_published: formData.is_published,
-        published_at: formData.is_published ? new Date().toISOString() : null,
-        expires_at: formData.expires_at || null,
+        published_at: formData.is_published && (!editingAnnouncement || !editingAnnouncement.is_published) ? new Date().toISOString() : editingAnnouncement?.published_at || null,
+        expires_at: expires_at,
       };
 
       if (editingAnnouncement) {
@@ -118,7 +129,7 @@ export default function AdminAnnouncements() {
         .from("announcements")
         .update({
           is_published: !announcement.is_published,
-          published_at: !announcement.is_published ? new Date().toISOString() : null,
+          published_at: !announcement.is_published ? new Date().toISOString() : announcement.published_at,
         })
         .eq("id", announcement.id);
       if (error) throw error;
@@ -137,20 +148,31 @@ export default function AdminAnnouncements() {
       priority: "normal",
       target_audience: "all",
       is_published: false,
-      expires_at: "",
+      duration: "never",
     });
     setEditingAnnouncement(null);
   };
 
   const openEditDialog = (announcement: Announcement) => {
     setEditingAnnouncement(announcement);
+    
+    let durationStr = "never";
+    if (announcement.expires_at) {
+      const diff = Math.ceil((new Date(announcement.expires_at).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+      if (diff <= 1) durationStr = "1";
+      else if (diff <= 3) durationStr = "3";
+      else if (diff <= 7) durationStr = "7";
+      else if (diff <= 14) durationStr = "14";
+      else durationStr = "30";
+    }
+
     setFormData({
       title: announcement.title,
       content: announcement.content,
       priority: announcement.priority,
       target_audience: announcement.target_audience,
       is_published: announcement.is_published,
-      expires_at: announcement.expires_at?.split("T")[0] || "",
+      duration: durationStr,
     });
     setIsDialogOpen(true);
   };
@@ -239,13 +261,20 @@ export default function AdminAnnouncements() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expires_at">Expires At (optional)</Label>
-                  <Input
-                    id="expires_at"
-                    type="date"
-                    value={formData.expires_at}
-                    onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
-                  />
+                  <Label>Announcement Duration</Label>
+                  <Select value={formData.duration} onValueChange={(v) => setFormData({ ...formData, duration: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="never">Never Expires</SelectItem>
+                      <SelectItem value="1">1 Day</SelectItem>
+                      <SelectItem value="3">3 Days</SelectItem>
+                      <SelectItem value="7">1 Week</SelectItem>
+                      <SelectItem value="14">2 Weeks</SelectItem>
+                      <SelectItem value="30">1 Month</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">

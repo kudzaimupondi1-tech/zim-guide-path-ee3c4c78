@@ -157,167 +157,166 @@ const Dashboard = () => {
 
   return (
     <PageTransition>
-    <div className="min-h-screen bg-secondary/30">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="container mx-auto px-3 sm:px-4">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link to="/dashboard" className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-                <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
-              </div>
-              <div>
-                <span className="text-sm sm:text-base font-bold text-foreground leading-none">EduGuide</span>
-                <span className="text-[10px] sm:text-[11px] text-muted-foreground block">Zimbabwe</span>
-              </div>
-            </Link>
-            <div className="flex items-center gap-1">
-              {queriesEnabled && (
-                <div className="relative">
-                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setShowChat(!showChat)}>
-                    <MessageSquare className="w-5 h-5" />
-                    {unreadMessages > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-green-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">{unreadMessages}</span>
-                    )}
-                  </Button>
-                </div>
-              )}
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" asChild>
-                <Link to="/profile"><User className="w-5 h-5" /></Link>
-              </Button>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
-                <LogOut className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-3xl">
-        {/* Announcements */}
-        {notifications.length > 0 && (
-          <section className="mb-8 space-y-3">
-            {notifications.map(ann => (
-              <div key={ann.id} className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex flex-col gap-2 relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-1 sm:w-1.5 h-full bg-primary/60"></div>
-                 <h3 className="font-bold text-primary pl-1 sm:pl-2">{ann.title}</h3>
-                 <p className="text-sm text-foreground pl-1 sm:pl-2 leading-relaxed whitespace-pre-wrap">{ann.message}</p>
-                 {ann.expires_at && (
-                   <span className="text-[10px] sm:text-xs text-muted-foreground pl-1 sm:pl-2 font-medium">Expires {new Date(ann.expires_at).toLocaleDateString()}</span>
-                 )}
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* Welcome */}
-        <section className="mb-10">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-            {getGreeting()}, {getUserName()} 👋
-          </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm">Your personalised university guidance starts here.</p>
-          <div className="mt-5 p-4 rounded-2xl bg-card border border-border shadow-sm">
-            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-              <span className="font-medium">Profile completion</span>
-              <span className="font-bold text-foreground">{profileCompleteness}%</span>
-            </div>
-            <Progress value={profileCompleteness} className="h-2.5 rounded-full" />
-            {profileCompleteness < 100 && (
-              <p className="text-[11px] text-muted-foreground mt-2">
-                {subjectCount === 0 ? "Add your subjects to complete your profile" : "Complete your profile for better recommendations"}
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* Action Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-          <Card className="group border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 overflow-hidden relative">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="pt-7 pb-6 px-6 flex flex-col h-full">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                <BookOpen className="w-7 h-7 text-primary" />
-              </div>
-              <h3 className="font-bold text-lg text-foreground mb-2">Add Subjects</h3>
-              <p className="text-sm text-muted-foreground flex-1 mb-5 leading-relaxed">
-                Enter your O-Level or A-Level results to unlock personalised programme recommendations.
-              </p>
-              <Button asChild className="w-full h-11 font-semibold rounded-xl group-hover:shadow-md transition-shadow">
-                <Link to="/my-subjects" className="flex items-center justify-center gap-2">
-                  Get Started <ChevronRight className="w-4 h-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="group border border-border shadow-sm hover:shadow-lg hover:border-yellow-400/40 transition-all duration-300 overflow-hidden relative">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="pt-7 pb-6 px-6 flex flex-col h-full">
-              <div className="w-14 h-14 rounded-2xl bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                <Heart className="w-7 h-7 text-yellow-500" />
-              </div>
-              <h3 className="font-bold text-lg text-foreground mb-2">Favoured Programs</h3>
-              <p className="text-sm text-muted-foreground flex-1 mb-5 leading-relaxed">
-                {favourites.length === 0
-                  ? "Star up to 10 programs from your recommendations to save them here."
-                  : `You have ${favourites.length} saved program${favourites.length > 1 ? "s" : ""}. View and download as PDF.`
-                }
-              </p>
-              {favourites.length > 0 ? (
-                <Button variant="outline" asChild className="w-full h-11 font-semibold rounded-xl border-yellow-300 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20">
-                  <Link to="/favored-programs" className="flex items-center justify-center gap-2">
-                    <Star className="w-4 h-4" /> View Favourites ({favourites.length})
-                  </Link>
-                </Button>
-              ) : (
-                <div className="h-11 flex items-center justify-center rounded-xl bg-muted/50 border border-dashed border-border text-sm text-muted-foreground">
-                  No favourites yet
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Quick Info */}
-        <section className="mb-10">
-          <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-            <GraduationCap className="w-4 h-4 text-primary" /> How It Works
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { step: "1", title: "Add Subjects", desc: "Enter your O or A-Level results with grades" },
-              { step: "2", title: "Pay & Unlock", desc: "Choose universities and make a small payment" },
-              { step: "3", title: "Get Matched", desc: "Receive personalised programme recommendations" },
-            ].map((item) => (
-              <div key={item.step} className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-primary">{item.step}</span>
+      <div className="min-h-screen bg-secondary/30">
+        {/* Top Navigation */}
+        <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
+          <div className="container mx-auto px-3 sm:px-4">
+            <div className="flex items-center justify-between h-14 sm:h-16">
+              <Link to="/dashboard" className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+                  <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                  <span className="text-sm sm:text-base font-bold text-foreground leading-none">EduGuide</span>
+                  <span className="text-[10px] sm:text-[11px] text-muted-foreground block">Zimbabwe</span>
                 </div>
+              </Link>
+              <div className="flex items-center gap-1">
+                {queriesEnabled && (
+                  <div className="relative">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => setShowChat(!showChat)}>
+                      <MessageSquare className="w-5 h-5" />
+                      {unreadMessages > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-green-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">{unreadMessages}</span>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" asChild>
+                  <Link to="/profile"><User className="w-5 h-5" /></Link>
+                </Button>
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
+                  <LogOut className="w-5 h-5" />
+                </Button>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Rating */}
-        <Card className="border border-border shadow-sm rounded-2xl">
-          <CardContent className="py-5 px-6 flex items-center justify-between gap-4">
-            <div>
-              <h3 className="font-bold text-foreground text-sm">How do you find EduGuide?</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Your feedback helps us improve</p>
             </div>
-            <StudentRating />
-          </CardContent>
-        </Card>
-      </main>
+          </div>
+        </header>
 
-      {/* Chat Widget */}
-      {user && queriesEnabled && <StudentQueryChat userId={user.id} open={showChat} onClose={() => setShowChat(false)} onRead={handleChatRead} />}
-    </div>
-  );
+        <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-3xl">
+          {/* Announcements */}
+          {notifications.length > 0 && (
+            <section className="mb-8 space-y-3">
+              {notifications.map(ann => (
+                <div key={ann.id} className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex flex-col gap-2 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 sm:w-1.5 h-full bg-primary/60"></div>
+                  <h3 className="font-bold text-primary pl-1 sm:pl-2">{ann.title}</h3>
+                  <p className="text-sm text-foreground pl-1 sm:pl-2 leading-relaxed whitespace-pre-wrap">{ann.message}</p>
+                  {ann.expires_at && (
+                    <span className="text-[10px] sm:text-xs text-muted-foreground pl-1 sm:pl-2 font-medium">Expires {new Date(ann.expires_at).toLocaleDateString()}</span>
+                  )}
+                </div>
+              ))}
+            </section>
+          )}
+
+          {/* Welcome */}
+          <section className="mb-10">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+              {getGreeting()}, {getUserName()} 👋
+            </h1>
+            <p className="text-muted-foreground mt-1.5 text-sm">Your personalised university guidance starts here.</p>
+            <div className="mt-5 p-4 rounded-2xl bg-card border border-border shadow-sm">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                <span className="font-medium">Profile completion</span>
+                <span className="font-bold text-foreground">{profileCompleteness}%</span>
+              </div>
+              <Progress value={profileCompleteness} className="h-2.5 rounded-full" />
+              {profileCompleteness < 100 && (
+                <p className="text-[11px] text-muted-foreground mt-2">
+                  {subjectCount === 0 ? "Add your subjects to complete your profile" : "Complete your profile for better recommendations"}
+                </p>
+              )}
+            </div>
+          </section>
+
+          {/* Action Cards */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+            <Card className="group border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 overflow-hidden relative">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardContent className="pt-7 pb-6 px-6 flex flex-col h-full">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                  <BookOpen className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="font-bold text-lg text-foreground mb-2">Add Subjects</h3>
+                <p className="text-sm text-muted-foreground flex-1 mb-5 leading-relaxed">
+                  Enter your O-Level or A-Level results to unlock personalised programme recommendations.
+                </p>
+                <Button asChild className="w-full h-11 font-semibold rounded-xl group-hover:shadow-md transition-shadow">
+                  <Link to="/my-subjects" className="flex items-center justify-center gap-2">
+                    Get Started <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="group border border-border shadow-sm hover:shadow-lg hover:border-yellow-400/40 transition-all duration-300 overflow-hidden relative">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardContent className="pt-7 pb-6 px-6 flex flex-col h-full">
+                <div className="w-14 h-14 rounded-2xl bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                  <Heart className="w-7 h-7 text-yellow-500" />
+                </div>
+                <h3 className="font-bold text-lg text-foreground mb-2">Favoured Programs</h3>
+                <p className="text-sm text-muted-foreground flex-1 mb-5 leading-relaxed">
+                  {favourites.length === 0
+                    ? "Star up to 10 programs from your recommendations to save them here."
+                    : `You have ${favourites.length} saved program${favourites.length > 1 ? "s" : ""}. View and download as PDF.`
+                  }
+                </p>
+                {favourites.length > 0 ? (
+                  <Button variant="outline" asChild className="w-full h-11 font-semibold rounded-xl border-yellow-300 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20">
+                    <Link to="/favored-programs" className="flex items-center justify-center gap-2">
+                      <Star className="w-4 h-4" /> View Favourites ({favourites.length})
+                    </Link>
+                  </Button>
+                ) : (
+                  <div className="h-11 flex items-center justify-center rounded-xl bg-muted/50 border border-dashed border-border text-sm text-muted-foreground">
+                    No favourites yet
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Quick Info */}
+          <section className="mb-10">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-primary" /> How It Works
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { step: "1", title: "Add Subjects", desc: "Enter your O or A-Level results with grades" },
+                { step: "2", title: "Pay & Unlock", desc: "Choose universities and make a small payment" },
+                { step: "3", title: "Get Matched", desc: "Receive personalised programme recommendations" },
+              ].map((item) => (
+                <div key={item.step} className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-primary">{item.step}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Rating */}
+          <Card className="border border-border shadow-sm rounded-2xl">
+            <CardContent className="py-5 px-6 flex items-center justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-foreground text-sm">How do you find EduGuide?</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Your feedback helps us improve</p>
+              </div>
+              <StudentRating />
+            </CardContent>
+          </Card>
+        </main>
+
+        {/* Chat Widget */}
+        {user && queriesEnabled && <StudentQueryChat userId={user.id} open={showChat} onClose={() => setShowChat(false)} onRead={handleChatRead} />}
+      </div>
     </PageTransition>
   );
 };

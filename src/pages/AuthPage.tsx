@@ -16,6 +16,7 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const isSigningUp = useRef(false);
+  const isRouting = useRef(false);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -29,7 +30,7 @@ const AuthPage = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       // Don't redirect during signup process
       if (isSigningUp.current) return;
-      if (session?.user) {
+      if (session?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
         await redirectBasedOnRole(session.user.id);
       }
     });
@@ -45,6 +46,8 @@ const AuthPage = () => {
   }, [navigate]);
 
   const redirectBasedOnRole = async (userId: string) => {
+    if (isRouting.current) return;
+    isRouting.current = true;
     try {
       const { data: hasAdminRole } = await supabase.rpc("has_role", {
         _user_id: userId,
@@ -59,6 +62,9 @@ const AuthPage = () => {
     } catch (error) {
       console.error("Error checking role:", error);
       navigate("/dashboard");
+    } finally {
+      // Allow future routing (e.g. if they log out and log back in without refreshing)
+      setTimeout(() => { isRouting.current = false; }, 1000);
     }
   };
 
