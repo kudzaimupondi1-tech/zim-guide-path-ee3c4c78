@@ -59,7 +59,6 @@ const dataMenuItems = [
 const systemMenuItems = [
   { title: "AI Config", url: "/admin/ai-config", icon: Brain, countKey: null },
   { title: "Announcements", url: "/admin/announcements", icon: Megaphone, countKey: "announcements" },
-  { title: "Deadlines", url: "/admin/deadlines", icon: Calendar, countKey: "deadlines" },
   { title: "Payments", url: "/admin/payments", icon: Hash, countKey: "payments" },
   { title: "Reports", url: "/admin/reports", icon: BarChart3, countKey: null },
   { title: "Student Queries", url: "/admin/queries", icon: MessageSquare, countKey: "queries" },
